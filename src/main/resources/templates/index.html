@@ -1,0 +1,20 @@
+package com.hospital.management.controller;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+
+@Controller
+public class IndexController {
+
+// Ana sayfaya (/) gelen herkesi Login'e at
+@GetMapping("/")
+public String index() {
+return "redirect:/doctors/login";
+}
+
+// Login başarılı olunca yönlendirilecek Dashboard sayfası
+@GetMapping("/dashboard")
+public String showDashboard() {
+return "dashboard"; // templates/dashboard.html dosyasını arar
+}
+}

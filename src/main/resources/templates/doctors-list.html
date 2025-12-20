@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><title>Doktor Listesi</title></head>
+<body>
+<h2 th:text="${pageTitle}">Başlık</h2>
+<table border="1">
+    <tr>
+        <th>Ad Soyad</th>
+        <th>Uzmanlık</th>
+        <th>Departman</th>
+    </tr>
+    <tr th:each="doc : ${doctors}">
+        <td th:text="${doc.firstName + ' ' + doc.lastName}"></td>
+        <td th:text="${doc.specialization}"></td>
+        <td th:text="${doc.department}"></td>
+    </tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Triaj Takip</title>
+  <style>
+    .CRITICAL { background-color: #ffcccc; color: red; font-weight: bold; }
+    .URGENT { background-color: #fff3cd; color: #856404; }
+    .STABLE { background-color: #d4edda; color: #155724; }
+  </style>
+</head>
+<body>
+<h2 th:text="${pageTitle}">Triaj Paneli</h2>
+<table border="1">
+  <thead>
+  <tr>
+    <th>Öncelik</th>
+    <th>Belirtiler</th>
+    <th>Ateş</th>
+    <th>Nabız</th>
+    <th>Tansiyon</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr th:each="t : ${triageRecords}" th:class="${t.priority}">
+    <td th:text="${t.priority}"></td>
+    <td th:text="${t.symptoms}"></td>
+    <td th:text="${t.temperature + '°C'}"></td>
+    <td th:text="${t.heartRate}"></td>
+    <td th:text="${t.bloodPressureSystolic + '/' + t.bloodPressureDiastolic}"></td>
+  </tr>
+  </tbody>
+</table>
+</body>
+</html>

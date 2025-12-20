@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Hasta Listesi</title>
+</head>
+<body>
+<h2 th:text="${pageTitle}">Başlık</h2>
+<table border="1">
+  <thead>
+  <tr>
+    <th>TC No</th>
+    <th>Ad Soyad</th>
+    <th>Telefon</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr th:each="p : ${patients}">
+    <td th:text="${p.tcNo}"></td>
+    <td th:text="${p.firstName + ' ' + p.lastName}"></td>
+    <td th:text="${p.phoneNumber}"></td>
+  </tr>
+  </tbody>
+</table>
+</body>
+</html>

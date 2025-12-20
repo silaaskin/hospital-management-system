@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Randevu Listesi</title>
+</head>
+<body>
+<h2>Hastane Randevu Sistemi</h2>
+<table border="1">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Tarih</th>
+        <th>Notlar</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="app : ${appointments}">
+        <td th:text="${app.id}">1</td>
+        <td th:text="${app.appointmentDate}">2025-01-01</td>
+        <td th:text="${app.notes}">Genel Kontrol</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

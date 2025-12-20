@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Reçete Listesi</title>
+</head>
+<body>
+<h2 th:text="${pageTitle}">Reçeteler</h2>
+<table border="1">
+  <thead>
+  <tr>
+    <th>ID</th>
+    <th>İlaçlar</th>
+    <th>Dozaj</th>
+    <th>Talimatlar</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr th:each="pr : ${prescriptions}">
+    <td th:text="${pr.id}"></td>
+    <td th:text="${pr.medications}"></td>
+    <td th:text="${pr.dosage}"></td>
+    <td th:text="${pr.instructions}"></td>
+  </tr>
+  </tbody>
+</table>
+</body>
+</html>
