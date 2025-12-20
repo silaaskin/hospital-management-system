@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Doktor Girişi</title>
+  <style>
+    body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #e9ecef; font-family: sans-serif; }
+    .login-box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.1); width: 300px; text-align: center; }
+    input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+    button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+    button:hover { background: #0056b3; }
+    .error { color: red; margin-top: 10px; font-size: 14px; }
+  </style>
+</head>
+<body>
+<div class="login-box">
+  <h2>Doktor Girişi</h2>
+  <form id="docForm">
+    <input type="text" id="username" placeholder="Kullanıcı Adı" required>
+    <input type="password" id="password" placeholder="Şifre" required>
+    <button type="submit">Giriş Yap</button>
+  </form>
+  <div id="msg" class="error"></div>
+</div>
+
+<script>
+  document.getElementById('docForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+
+    fetch('/doctors/api/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ username: username, password: password })
+    })
+            .then(res => res.json())
+            .then(data => {
+              if(data.success) window.location.href = '/dashboard';
+              else document.getElementById('msg').innerText = "Giriş başarısız!";
+            }).catch(err => document.getElementById('msg').innerText = "Hata oluştu.");
+  });
+</script>
+</body>
+</html>
