@@ -2,17 +2,21 @@ package com.hospital.management.controller;
 
 import com.hospital.management.model.Patient;
 import com.hospital.management.service.PatientService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller; // Değiştirildi
-import org.springframework.ui.Model; // Eklendi
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
-@Controller // View desteği için @Controller
-@RequestMapping("/patients") // URL prefixini sadeleştirdik
+@Controller
+@RequestMapping("/patients")
 @CrossOrigin(origins = "*")
 public class PatientController {
 
@@ -20,43 +24,78 @@ public class PatientController {
     private PatientService patientService;
 
     // ==========================================
-    //          VIEW (HTML) DÖNDÜREN METODLAR
+    //          GİRİŞ VE GÜVENLİK (SESSION)
     // ==========================================
 
-    @GetMapping("/view") // http://localhost:8080/patients/view
-    public String showAllPatients(Model model) {
+    // VİEW: Hasta Giriş Sayfası
+    @GetMapping("/login")
+    public String showLoginPage() {
+        return "login-patient"; // templates/login-patient.html dosyasını açar
+    }
+
+    // API: Hasta Giriş İşlemi
+    @PostMapping("/api/login")
+    @ResponseBody
+    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials, HttpSession session) {
+        String tcNo = credentials.get("tcNo");
+        Optional<Patient> patient = patientService.login(tcNo);
+
+        if (patient.isPresent()) {
+            // OTURUM BİLGİLERİNİ KAYDET
+            session.setAttribute("userType", "PATIENT");
+            session.setAttribute("userId", patient.get().getId());
+            session.setAttribute("userName", patient.get().getFirstName() + " " + patient.get().getLastName());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("TC Kimlik No bulunamadı!");
+        }
+    }
+
+    // ==========================================
+    //          VIEW (HTML) METODLARI
+    // ==========================================
+
+    @GetMapping("/view")
+    public String showAllPatients(Model model, HttpSession session) {
+        // GÜVENLİK: Bu sayfayı sadece Doktorlar görebilir
+        String userType = (String) session.getAttribute("userType");
+        if (!"DOCTOR".equals(userType)) {
+            return "redirect:/dashboard"; // Yetkisiz giriş ise panele at
+        }
+
         List<Patient> patients = patientService.getAllPatients();
         model.addAttribute("patients", patients);
         model.addAttribute("pageTitle", "Hasta Kayıt Listesi");
-        return "patients-list"; // templates/patients-list.html
+        return "patients-list";
     }
 
-    @GetMapping("/view/{id}") // http://localhost:8080/patients/view/1
+    @GetMapping("/view/{id}")
     public String showPatientDetail(@PathVariable Long id, Model model) {
         Patient patient = patientService.getPatientById(id)
                 .orElseThrow(() -> new RuntimeException("Hasta bulunamadı!"));
         model.addAttribute("patient", patient);
-        return "patient-detail"; // templates/patient-detail.html
+        return "patient-detail";
     }
 
     // ==========================================
-    //          API (JSON) DÖNDÜREN METODLAR
+    //          API (JSON) METODLARI
     // ==========================================
 
     @GetMapping("/api")
     @ResponseBody
     public ResponseEntity<List<Patient>> getAllPatients() {
-        List<Patient> patients = patientService.getAllPatients();
-        return ResponseEntity.ok(patients);
+        return ResponseEntity.ok(patientService.getAllPatients());
     }
 
     @GetMapping("/api/{id}")
     @ResponseBody
     public ResponseEntity<?> getPatientById(@PathVariable Long id) {
         try {
-            Patient patient = patientService.getPatientById(id)
-                    .orElseThrow(() -> new RuntimeException("Hasta bulunamadı! ID: " + id));
-            return ResponseEntity.ok(patient);
+            return ResponseEntity.ok(patientService.getPatientById(id)
+                    .orElseThrow(() -> new RuntimeException("Hasta bulunamadı")));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
@@ -66,9 +105,8 @@ public class PatientController {
     @ResponseBody
     public ResponseEntity<?> getPatientByTcNo(@PathVariable String tcNo) {
         try {
-            Patient patient = patientService.getPatientByTcNo(tcNo)
-                    .orElseThrow(() -> new RuntimeException("Hasta bulunamadı! TC No: " + tcNo));
-            return ResponseEntity.ok(patient);
+            return ResponseEntity.ok(patientService.getPatientByTcNo(tcNo)
+                    .orElseThrow(() -> new RuntimeException("Hasta bulunamadı")));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
@@ -77,16 +115,14 @@ public class PatientController {
     @GetMapping("/api/search")
     @ResponseBody
     public ResponseEntity<List<Patient>> searchPatients(@RequestParam String name) {
-        List<Patient> patients = patientService.searchPatientsByName(name);
-        return ResponseEntity.ok(patients);
+        return ResponseEntity.ok(patientService.searchPatientsByName(name));
     }
 
     @PostMapping("/api")
     @ResponseBody
     public ResponseEntity<?> createPatient(@RequestBody Patient patient) {
         try {
-            Patient savedPatient = patientService.savePatient(patient);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedPatient);
+            return ResponseEntity.status(HttpStatus.CREATED).body(patientService.savePatient(patient));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
@@ -96,8 +132,7 @@ public class PatientController {
     @ResponseBody
     public ResponseEntity<?> updatePatient(@PathVariable Long id, @RequestBody Patient patient) {
         try {
-            Patient updatedPatient = patientService.updatePatient(id, patient);
-            return ResponseEntity.ok(updatedPatient);
+            return ResponseEntity.ok(patientService.updatePatient(id, patient));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
@@ -108,7 +143,7 @@ public class PatientController {
     public ResponseEntity<?> deletePatient(@PathVariable Long id) {
         try {
             patientService.deletePatient(id);
-            return ResponseEntity.ok("Hasta başarıyla silindi!");
+            return ResponseEntity.ok("Hasta silindi");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }

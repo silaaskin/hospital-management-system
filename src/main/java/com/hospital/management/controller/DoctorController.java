@@ -2,19 +2,20 @@ package com.hospital.management.controller;
 
 import com.hospital.management.model.Doctor;
 import com.hospital.management.service.DoctorService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller; // View döndürmek için @RestController yerine @Controller
-import org.springframework.ui.Model; // Veri taşımak için
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Controller // Sınıf düzeyinde @Controller yaptık
-@RequestMapping("/doctors") // Prefix'i sadeleştirdik
+@Controller
+@RequestMapping("/doctors")
 @CrossOrigin(origins = "*")
 public class DoctorController {
 
@@ -22,47 +23,72 @@ public class DoctorController {
     private DoctorService doctorService;
 
     // ==========================================
-    //          VIEW (HTML) DÖNDÜREN METODLAR
+    //          GİRİŞ VE GÜVENLİK
     // ==========================================
-    @GetMapping("/login") // http://localhost:8080/doctors/login
+
+    @GetMapping("/login")
     public String showLoginPage() {
-        return "login"; // templates/login.html dosyasını arar
+        return "login-doctor"; // templates/login-doctor.html dosyasını açar
     }
 
-    @GetMapping("/view") // http://localhost:8080/doctors/view
+    @PostMapping("/api/login")
+    @ResponseBody
+    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials, HttpSession session) {
+        try {
+            String username = credentials.get("username");
+            String password = credentials.get("password");
+
+            Doctor doctor = doctorService.login(username, password)
+                    .orElseThrow(() -> new RuntimeException("Kullanıcı adı veya şifre hatalı!"));
+
+            // OTURUM BAŞLAT
+            session.setAttribute("userType", "DOCTOR");
+            session.setAttribute("userId", doctor.getId());
+            session.setAttribute("userName", doctor.getFirstName() + " " + doctor.getLastName());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
+    }
+
+    // ==========================================
+    //          VIEW (HTML) METODLARI
+    // ==========================================
+
+    @GetMapping("/view")
     public String showAllDoctors(Model model) {
         List<Doctor> doctors = doctorService.getAllDoctors();
         model.addAttribute("doctors", doctors);
-        model.addAttribute("pageTitle", "Doktor Listesi");
-        return "doctors-list"; // templates/doctors-list.html dosyasını arar
+        return "doctors-list";
     }
 
-    @GetMapping("/view/{id}") // http://localhost:8080/doctors/view/1
+    @GetMapping("/view/{id}")
     public String showDoctorDetail(@PathVariable Long id, Model model) {
         Doctor doctor = doctorService.getDoctorById(id)
                 .orElseThrow(() -> new RuntimeException("Doktor bulunamadı!"));
         model.addAttribute("doctor", doctor);
-        return "doctor-detail"; // templates/doctor-detail.html
+        return "doctor-detail";
     }
 
     // ==========================================
-    //          API (JSON) DÖNDÜREN METODLAR
+    //          API (JSON) METODLARI
     // ==========================================
 
     @GetMapping("/api")
-    @ResponseBody // JSON dönmesi için metod bazında ekledik
+    @ResponseBody
     public ResponseEntity<List<Doctor>> getAllDoctors() {
-        List<Doctor> doctors = doctorService.getAllDoctors();
-        return ResponseEntity.ok(doctors);
+        return ResponseEntity.ok(doctorService.getAllDoctors());
     }
 
     @GetMapping("/api/{id}")
     @ResponseBody
     public ResponseEntity<?> getDoctorById(@PathVariable Long id) {
         try {
-            Doctor doctor = doctorService.getDoctorById(id)
-                    .orElseThrow(() -> new RuntimeException("Doktor bulunamadı! ID: " + id));
-            return ResponseEntity.ok(doctor);
+            return ResponseEntity.ok(doctorService.getDoctorById(id)
+                    .orElseThrow(() -> new RuntimeException("Doktor bulunamadı")));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
@@ -71,54 +97,16 @@ public class DoctorController {
     @GetMapping("/api/specialization/{specialization}")
     @ResponseBody
     public ResponseEntity<List<Doctor>> getDoctorsBySpecialization(@PathVariable String specialization) {
-        List<Doctor> doctors = doctorService.getDoctorsBySpecialization(specialization);
-        return ResponseEntity.ok(doctors);
+        return ResponseEntity.ok(doctorService.getDoctorsBySpecialization(specialization));
     }
 
-    @GetMapping("/api/department/{department}")
-    @ResponseBody
-    public ResponseEntity<List<Doctor>> getDoctorsByDepartment(@PathVariable String department) {
-        List<Doctor> doctors = doctorService.getDoctorsByDepartment(department);
-        return ResponseEntity.ok(doctors);
-    }
-
-    @GetMapping("/api/search")
-    @ResponseBody
-    public ResponseEntity<List<Doctor>> searchDoctors(@RequestParam String name) {
-        List<Doctor> doctors = doctorService.searchDoctorsByName(name);
-        return ResponseEntity.ok(doctors);
-    }
-
-    @PostMapping("/api/login")
-    @ResponseBody
-    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
-        try {
-            String username = credentials.get("username");
-            String password = credentials.get("password");
-
-            Doctor doctor = doctorService.login(username, password)
-                    .orElseThrow(() -> new RuntimeException("Kullanıcı adı veya şifre hatalı!"));
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("doctor", doctor);
-            response.put("message", "Giriş başarılı!");
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-        }
-    }
+    // (Diğer arama metodların varsa buraya ekleyebilirsin, temel yapı bu şekildedir)
 
     @PostMapping("/api")
     @ResponseBody
     public ResponseEntity<?> createDoctor(@RequestBody Doctor doctor) {
         try {
-            Doctor savedDoctor = doctorService.saveDoctor(doctor);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedDoctor);
+            return ResponseEntity.status(HttpStatus.CREATED).body(doctorService.saveDoctor(doctor));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
@@ -128,8 +116,7 @@ public class DoctorController {
     @ResponseBody
     public ResponseEntity<?> updateDoctor(@PathVariable Long id, @RequestBody Doctor doctor) {
         try {
-            Doctor updatedDoctor = doctorService.updateDoctor(id, doctor);
-            return ResponseEntity.ok(updatedDoctor);
+            return ResponseEntity.ok(doctorService.updateDoctor(id, doctor));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
@@ -140,7 +127,7 @@ public class DoctorController {
     public ResponseEntity<?> deleteDoctor(@PathVariable Long id) {
         try {
             doctorService.deleteDoctor(id);
-            return ResponseEntity.ok("Doktor başarıyla silindi!");
+            return ResponseEntity.ok("Doktor silindi");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
