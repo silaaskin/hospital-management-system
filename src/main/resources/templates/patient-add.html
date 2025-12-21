@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Yeni Hasta Kaydı</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-light">
+
+<div class="container mt-4" style="max-width: 800px;">
+  <div class="card shadow-lg border-0">
+    <div class="card-header bg-primary text-white text-center py-3">
+      <h4 class="mb-0"><i class="fas fa-user-plus"></i> Tam Kapsamlı Hasta Kaydı</h4>
+    </div>
+    <div class="card-body p-4">
+      <form id="addPatientForm">
+        <h6 class="text-primary mb-3">Kişisel Bilgiler</h6>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Ad *</label>
+            <input type="text" id="firstName" class="form-control" required>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Soyad *</label>
+            <input type="text" id="lastName" class="form-control" required>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">TC Kimlik No *</label>
+            <input type="text" id="tcNo" class="form-control" maxlength="11" required>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Doğum Tarihi</label>
+            <input type="date" id="birthDate" class="form-control">
+          </div>
+        </div>
+
+        <hr>
+        <h6 class="text-primary mb-3">İletişim ve Sağlık</h6>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Telefon *</label>
+            <input type="text" id="phone" class="form-control" required>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">E-Posta</label>
+            <input type="email" id="email" class="form-control">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label class="form-label fw-bold">Kan Grubu</label>
+            <select id="bloodType" class="form-select">
+              <option value="">Seçiniz</option>
+              <option value="A+">A Rh+</option>
+              <option value="A-">A Rh-</option>
+              <option value="B+">B Rh+</option>
+              <option value="B-">B Rh-</option>
+              <option value="AB+">AB Rh+</option>
+              <option value="AB-">AB Rh-</option>
+              <option value="0+">0 Rh+</option>
+              <option value="0-">0 Rh-</option>
+            </select>
+          </div>
+          <div class="col-md-8 mb-3">
+            <label class="form-label fw-bold">Adres</label>
+            <textarea id="address" class="form-control" rows="2"></textarea>
+          </div>
+        </div>
+
+        <div class="d-grid gap-2 mt-4">
+          <button type="submit" class="btn btn-success btn-lg">Kaydet</button>
+          <a href="/patients/view" class="btn btn-secondary">İptal</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('addPatientForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const patientData = {
+      firstName: document.getElementById('firstName').value,
+      lastName: document.getElementById('lastName').value,
+      tcNo: document.getElementById('tcNo').value,
+      phone: document.getElementById('phone').value,
+      email: document.getElementById('email').value,
+      address: document.getElementById('address').value,
+      bloodType: document.getElementById('bloodType').value,
+      birthDate: document.getElementById('birthDate').value || null
+    };
+
+    fetch('/patients/api', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(patientData)
+    })
+            .then(response => {
+              if(response.ok) {
+                alert("✅ Hasta başarıyla kaydedildi!");
+                window.location.href = "/patients/view";
+              } else {
+                alert("❌ Hata! TC Kimlik No kayıtlı olabilir.");
+              }
+            });
+  });
+</script>
+</body>
+</html>

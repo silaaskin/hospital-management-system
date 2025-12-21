@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Randevu Al</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow-lg border-0">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0"><i class="fas fa-calendar-check"></i> Yeni Randevu Oluştur</h4>
+        </div>
+        <div class="card-body p-4">
+
+          <form action="/patients/appointments/book" method="post">
+
+            <div class="mb-4">
+              <label class="form-label fw-bold">Poliklinik / Bölüm Seçiniz</label>
+              <select id="departmentSelect" class="form-select form-select-lg" onchange="filterDoctors()">
+                <option value="" selected disabled>-- Lütfen Önce Bölüm Seçin --</option>
+                <option th:each="dept : ${departments}"
+                        th:value="${dept}"
+                        th:text="${dept}"></option>
+              </select>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label fw-bold">Doktor Seçiniz</label>
+              <select name="doctorId" id="doctorSelect" class="form-select" disabled required>
+                <option value="" selected disabled>-- Önce Bölüm Seçiniz --</option>
+                <option th:each="doc : ${doctors}"
+                        th:value="${doc.id}"
+                        th:data-dept="${doc.specialization}"
+                        th:text="${'Dr. ' + doc.firstName + ' ' + doc.lastName}"></option>
+              </select>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label fw-bold">Randevu Tarihi ve Saati</label>
+              <input type="datetime-local" name="appointmentDate" class="form-control" required>
+            </div>
+
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-success btn-lg">
+                <i class="fas fa-check-circle"></i> Randevuyu Onayla
+              </button>
+              <a href="/dashboard" class="btn btn-outline-secondary">İptal</a>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function filterDoctors() {
+    const selectedDept = document.getElementById("departmentSelect").value;
+    const doctorSelect = document.getElementById("doctorSelect");
+    const options = doctorSelect.getElementsByTagName("option");
+
+    // Doktor seçim kutusunu aktif et
+    doctorSelect.disabled = false;
+    doctorSelect.value = ""; // Seçimi sıfırla
+
+    // Tüm doktorları kontrol et
+    for (let i = 0; i < options.length; i++) {
+      const option = options[i];
+      const doctorDept = option.getAttribute("data-dept");
+
+      // Eğer "Lütfen seçiniz" seçeneğiyse dokunma
+      if (!doctorDept) continue;
+
+      // Bölüm eşleşiyorsa göster, eşleşmiyorsa gizle
+      if (doctorDept === selectedDept) {
+        option.style.display = "block";
+      } else {
+        option.style.display = "none";
+      }
+    }
+  }
+</script>
+
+</body>
+</html>
