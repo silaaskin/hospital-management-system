@@ -2,8 +2,10 @@ package com.hospital.management.config;
 
 import com.hospital.management.model.Doctor;
 import com.hospital.management.model.Patient;
+import com.hospital.management.model.Secretary;
 import com.hospital.management.repository.DoctorRepository;
 import com.hospital.management.repository.PatientRepository;
+import com.hospital.management.repository.SecretaryRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -14,16 +16,22 @@ public class DataSeeder implements CommandLineRunner {
 
     private final DoctorRepository doctorRepository;
     private final PatientRepository patientRepository;
+    private final SecretaryRepository secretaryRepository; // Yeni eklendi
 
-    public DataSeeder(DoctorRepository doctorRepository, PatientRepository patientRepository) {
+    // Constructor güncellendi
+    public DataSeeder(DoctorRepository doctorRepository,
+                      PatientRepository patientRepository,
+                      SecretaryRepository secretaryRepository) {
         this.doctorRepository = doctorRepository;
         this.patientRepository = patientRepository;
+        this.secretaryRepository = secretaryRepository;
     }
 
     @Override
     public void run(String... args) throws Exception {
         loadDoctors();
         loadPatients();
+        loadSecretaries(); // Yeni metod çağrılıyor
     }
 
     private void loadDoctors() {
@@ -34,7 +42,7 @@ public class DataSeeder implements CommandLineRunner {
             d1.setSpecialization("Kardiyoloji");
             d1.setDepartment("Kalp Damar");
             d1.setUsername("doktor1");
-            d1.setPassword("1234"); // Gerçek hayatta şifreli olmalı!
+            d1.setPassword("1234");
 
             Doctor d2 = new Doctor();
             d2.setFirstName("Canan");
@@ -73,6 +81,20 @@ public class DataSeeder implements CommandLineRunner {
             patientRepository.save(p1);
             patientRepository.save(p2);
             System.out.println("✅ Örnek Hastalar Eklendi!");
+        }
+    }
+
+    // Yeni Metod: Sekreter Ekleme
+    private void loadSecretaries() {
+        if (secretaryRepository.count() == 0) {
+            Secretary s1 = new Secretary();
+            s1.setFirstName("Selin");
+            s1.setLastName("Yılmaz");
+            s1.setUsername("sekreter1");
+            s1.setPassword("1234");
+
+            secretaryRepository.save(s1);
+            System.out.println("✅ Örnek Sekreter Eklendi!");
         }
     }
 }

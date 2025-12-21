@@ -22,6 +22,9 @@ public class Patient {
     @Column(unique = true, nullable = false, length = 11)
     private String tcNo;
 
+    // YENİ EKLENEN ALAN: ŞİFRE
+    private String password;
+
     private LocalDate birthDate;
 
     private String phone;
@@ -47,6 +50,8 @@ public class Patient {
         this.lastName = lastName;
         this.tcNo = tcNo;
     }
+
+    // Getter ve Setter Metodları
 
     public Long getId() {
         return id;
@@ -78,6 +83,15 @@ public class Patient {
 
     public void setTcNo(String tcNo) {
         this.tcNo = tcNo;
+    }
+
+    // YENİ EKLENEN GETTER/SETTER
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public LocalDate getBirthDate() {

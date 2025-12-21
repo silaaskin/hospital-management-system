@@ -20,18 +20,16 @@ public class IndexController {
         String userType = (String) session.getAttribute("userType");
         String userName = (String) session.getAttribute("userName");
 
-        // Giriş yapmamışsa ana sayfaya at
-        if (userType == null) {
-            return "redirect:/";
-        }
+        if (userType == null) return "redirect:/";
 
         model.addAttribute("userName", userName);
 
-        // Rolüne göre doğru sayfayı aç
         if ("DOCTOR".equals(userType)) {
-            return "dashboard-doctor"; // templates/dashboard-doctor.html
+            return "dashboard-doctor";
         } else if ("PATIENT".equals(userType)) {
-            return "dashboard-patient"; // templates/dashboard-patient.html
+            return "dashboard-patient";
+        } else if ("SECRETARY".equals(userType)) { // YENİ EKLENEN KISIM
+            return "dashboard-secretary";
         }
 
         return "redirect:/";
