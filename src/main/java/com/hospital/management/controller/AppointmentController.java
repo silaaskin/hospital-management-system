@@ -39,10 +39,12 @@ public class AppointmentController {
             model.addAttribute("appointments", myAppointments);
             model.addAttribute("pageTitle", "Randevularım");
         } else if ("DOCTOR".equals(userType)) {
-            // DOKTOR İSE: Tüm randevuları görsün
-            List<Appointment> allAppointments = appointmentService.getAllAppointments();
-            model.addAttribute("appointments", allAppointments);
-            model.addAttribute("pageTitle", "Tüm Randevular (Doktor Paneli)");
+            // --- GÜNCELLEME BURADA YAPILDI ---
+            // ESKİSİ: appointmentService.getAllAppointments();
+            // YENİSİ: Sadece giriş yapan doktora ait randevuları getirir.
+            List<Appointment> myDoctorAppointments = appointmentService.getAppointmentsByDoctor(userId);
+            model.addAttribute("appointments", myDoctorAppointments);
+            model.addAttribute("pageTitle", "Randevu Listem");
         } else {
             return "redirect:/"; // Giriş yapmamışsa ana sayfaya at
         }

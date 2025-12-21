@@ -3,26 +3,72 @@
 <head>
   <meta charset="UTF-8">
   <title>Reçete Listesi</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body>
-<h2 th:text="${pageTitle}">Reçeteler</h2>
-<table border="1">
-  <thead>
-  <tr>
-    <th>ID</th>
-    <th>İlaçlar</th>
-    <th>Dozaj</th>
-    <th>Talimatlar</th>
-  </tr>
-  </thead>
-  <tbody>
-  <tr th:each="pr : ${prescriptions}">
-    <td th:text="${pr.id}"></td>
-    <td th:text="${pr.medications}"></td>
-    <td th:text="${pr.dosage}"></td>
-    <td th:text="${pr.instructions}"></td>
-  </tr>
-  </tbody>
-</table>
+<body class="bg-light">
+
+<div class="container mt-5">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="text-primary"><i class="fas fa-file-prescription"></i> <span th:text="${pageTitle}">Reçeteler</span></h3>
+    <a href="/dashboard" class="btn btn-outline-secondary">
+      <i class="fas fa-arrow-left"></i> Panele Dön
+    </a>
+  </div>
+
+  <div th:if="${#lists.isEmpty(prescriptions)}" class="alert alert-warning shadow-sm">
+    <i class="fas fa-info-circle"></i> Henüz görüntülenecek bir reçete kaydı yok.
+  </div>
+
+  <div class="row">
+    <div class="col-md-6 mb-4" th:each="item : ${prescriptions}">
+      <div class="card shadow h-100 border-0 border-start border-4 border-primary">
+
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <span class="badge bg-primary">Reçete #<span th:text="${item.id}"></span></span>
+          <small class="text-muted" th:text="${item.prescriptionDate}"></small>
+        </div>
+
+        <div class="card-body">
+          <h5 class="card-title text-dark mb-3">
+                        <span th:if="${session.userType == 'PATIENT'}">
+                            <i class="fas fa-user-md text-primary"></i>
+                            Dr. <span th:text="${item.doctor.firstName + ' ' + item.doctor.lastName}"></span>
+                        </span>
+            <span th:if="${session.userType == 'DOCTOR'}">
+                            <i class="fas fa-user-injured text-info"></i>
+                            Hasta: <span th:text="${item.appointment.patient.firstName + ' ' + item.appointment.patient.lastName}"></span>
+                        </span>
+          </h5>
+
+          <hr>
+
+          <p class="mb-2">
+            <strong><i class="fas fa-capsules text-success"></i> İlaçlar:</strong><br>
+            <span th:text="${item.medications}" class="fs-5"></span>
+          </p>
+
+          <p class="mb-2" th:if="${item.dosage}">
+            <strong><i class="fas fa-prescription-bottle"></i> Kullanım:</strong>
+            <span th:text="${item.dosage}"></span>
+          </p>
+
+          <p class="mb-2" th:if="${item.instructions}">
+            <strong><i class="fas fa-info-circle"></i> Talimat:</strong>
+            <span class="fst-italic text-muted" th:text="${item.instructions}"></span>
+          </p>
+
+          <div class="alert alert-light mt-3 border p-2 small" th:if="${item.notes}">
+            <strong><i class="fas fa-sticky-note"></i> Doktor Notu:</strong>
+            <span th:text="${item.notes}"></span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

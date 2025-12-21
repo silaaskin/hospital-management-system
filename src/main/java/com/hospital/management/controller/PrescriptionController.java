@@ -10,7 +10,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -21,9 +20,18 @@ public class PrescriptionController {
 
     @Autowired
     private PrescriptionService prescriptionService;
+    @PutMapping("/api/{id}")
+    @ResponseBody
+    public ResponseEntity<?> updatePrescription(@PathVariable Long id, @RequestBody Prescription details) {
+        try {
+            return ResponseEntity.ok(prescriptionService.updatePrescription(id, details));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
 
     // ==========================================
-    //          AKILLI GÖRÜNÜM (ROL BAZLI)
+    //          GÖRÜNÜM (VIEW)
     // ==========================================
 
     @GetMapping("/view")
@@ -31,66 +39,71 @@ public class PrescriptionController {
         String userType = (String) session.getAttribute("userType");
         Long userId = (Long) session.getAttribute("userId");
 
+        // GÜVENLİK: Eğer giriş yapılmadıysa ana sayfaya at
+        if (userId == null) return "redirect:/";
+
         if ("PATIENT".equals(userType)) {
             // HASTA İSE: Sadece kendi reçetelerini görsün
             List<Prescription> myPrescriptions = prescriptionService.getPrescriptionsByPatient(userId);
             model.addAttribute("prescriptions", myPrescriptions);
             model.addAttribute("pageTitle", "Reçetelerim");
         } else if ("DOCTOR".equals(userType)) {
-            // DOKTOR İSE: Tüm reçeteleri görsün
+            // DOKTOR İSE: Yazdığı veya tüm reçeteleri görsün
+            // (Burada tümünü getiriyoruz, istersen sadece doktorun yazdıklarını getirebilirsin)
             List<Prescription> allPrescriptions = prescriptionService.getAllPrescriptions();
             model.addAttribute("prescriptions", allPrescriptions);
-            model.addAttribute("pageTitle", "Tüm Reçeteler (Doktor Paneli)");
-        } else {
-            return "redirect:/"; // Giriş yoksa at
+            model.addAttribute("pageTitle", "Yazılan Reçeteler (Doktor Paneli)");
         }
 
-        return "prescriptions-list"; // templates/prescriptions-list.html
+        return "prescriptions-list"; // HTML dosyasını aşağıda güncelleyeceğiz
     }
 
     // ==========================================
-    //          API METODLARI
+    //          API (KAYIT İŞLEMİ)
     // ==========================================
-
-    @GetMapping("/api")
-    @ResponseBody
-    public ResponseEntity<List<Prescription>> getAllPrescriptions() {
-        return ResponseEntity.ok(prescriptionService.getAllPrescriptions());
-    }
-
-    @GetMapping("/api/{id}")
-    @ResponseBody
-    public ResponseEntity<?> getPrescriptionById(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(prescriptionService.getPrescriptionById(id).orElseThrow());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
-    }
-
-    // (Diğer filtreleme metodların: doctor, patient, date-range aynen kalabilir)
 
     @PostMapping("/api")
     @ResponseBody
     public ResponseEntity<?> createPrescription(@RequestBody Map<String, Object> prescriptionData) {
         try {
+            // Frontend'den (Modal) gelen verileri alıyoruz
             Long appointmentId = Long.valueOf(prescriptionData.get("appointmentId").toString());
             Long doctorId = Long.valueOf(prescriptionData.get("doctorId").toString());
 
             Prescription prescription = new Prescription();
-            prescription.setMedications(prescriptionData.get("medications").toString());
-            if(prescriptionData.containsKey("dosage")) prescription.setDosage(prescriptionData.get("dosage").toString());
-            if(prescriptionData.containsKey("instructions")) prescription.setInstructions(prescriptionData.get("instructions").toString());
-            if(prescriptionData.containsKey("durationDays")) prescription.setDurationDays(Integer.valueOf(prescriptionData.get("durationDays").toString()));
-            if(prescriptionData.containsKey("notes")) prescription.setNotes(prescriptionData.get("notes").toString());
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(
-                    prescriptionService.createPrescription(appointmentId, doctorId, prescription)
-            );
+            // Verileri güvenli şekilde dolduruyoruz
+            if (prescriptionData.get("medications") != null)
+                prescription.setMedications(prescriptionData.get("medications").toString());
+
+            if(prescriptionData.containsKey("dosage"))
+                prescription.setDosage(prescriptionData.get("dosage").toString());
+
+            if(prescriptionData.containsKey("instructions"))
+                prescription.setInstructions(prescriptionData.get("instructions").toString());
+
+            if(prescriptionData.containsKey("durationDays") && prescriptionData.get("durationDays") != "")
+                prescription.setDurationDays(Integer.valueOf(prescriptionData.get("durationDays").toString()));
+
+            if(prescriptionData.containsKey("notes"))
+                prescription.setNotes(prescriptionData.get("notes").toString());
+
+            // Servise gönderip kaydediyoruz -> Bu andan itibaren hasta reçeteyi görebilir!
+            Prescription saved = prescriptionService.createPrescription(appointmentId, doctorId, prescription);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Hata: " + e.getMessage());
         }
     }
 
-    // (Delete ve Update metodlarını da buraya ekleyebilirsin)
+    // Diğer API metodları (Get, Delete vs.) buraya eklenebilir
+    @GetMapping("/api")
+    @ResponseBody
+    public ResponseEntity<List<Prescription>> getAll() {
+        return ResponseEntity.ok(prescriptionService.getAllPrescriptions());
+    }
+
 }

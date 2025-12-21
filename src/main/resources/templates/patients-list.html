@@ -20,7 +20,7 @@
     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
       <h4 class="mb-0 text-primary"><i class="fas fa-users"></i> Kayıtlı Hastalar</h4>
 
-      <a href="/patients/add" class="btn btn-success">
+      <a href="/patients/add" class="btn btn-success" th:if="${session.userType == 'SECRETARY'}">
         <i class="fas fa-user-plus"></i> Yeni Hasta Ekle
       </a>
     </div>

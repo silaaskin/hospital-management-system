@@ -2,34 +2,184 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
-  <title>Triaj Takip</title>
+  <title>Acil Triaj Paneli</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    .CRITICAL { background-color: #ffcccc; color: red; font-weight: bold; }
-    .URGENT { background-color: #fff3cd; color: #856404; }
-    .STABLE { background-color: #d4edda; color: #155724; }
+    body { background-color: #1a1d20; color: white; font-family: 'Segoe UI', sans-serif; }
+    .triage-card { transition: transform 0.2s; border-left: 15px solid #ccc; color: #333; margin-bottom: 20px; border-radius: 10px; }
+    .triage-card:hover { transform: scale(1.02); }
+
+    .priority-CRITICAL { border-left-color: #dc3545; background-color: #fff5f5; }
+    .priority-URGENT { border-left-color: #ffc107; background-color: #fffbf0; }
+    .priority-SEMI_URGENT { border-left-color: #0d6efd; background-color: #f0f7ff; }
+    .priority-NON_URGENT { border-left-color: #198754; background-color: #f0fff4; }
+
+    .vital-box { background: rgba(0,0,0,0.05); padding: 8px; border-radius: 8px; text-align: center; }
+    .vital-val { font-size: 1.3rem; font-weight: bold; display: block; }
+    .status-badge { position: absolute; top: 10px; right: 10px; }
   </style>
 </head>
 <body>
-<h2 th:text="${pageTitle}">Triaj Paneli</h2>
-<table border="1">
-  <thead>
-  <tr>
-    <th>Öncelik</th>
-    <th>Belirtiler</th>
-    <th>Ateş</th>
-    <th>Nabız</th>
-    <th>Tansiyon</th>
-  </tr>
-  </thead>
-  <tbody>
-  <tr th:each="t : ${triageRecords}" th:class="${t.priority}">
-    <td th:text="${t.priority}"></td>
-    <td th:text="${t.symptoms}"></td>
-    <td th:text="${t.temperature + '°C'}"></td>
-    <td th:text="${t.heartRate}"></td>
-    <td th:text="${t.bloodPressureSystolic + '/' + t.bloodPressureDiastolic}"></td>
-  </tr>
-  </tbody>
-</table>
+
+<div class="container-fluid mt-3">
+  <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3 border-secondary">
+    <div>
+      <h2 class="mb-0 fw-bold text-danger"><i class="fas fa-ambulance fa-beat"></i> ACİL SERVİS MONİTÖRÜ</h2>
+      <small class="text-white-50" th:text="${pageTitle}">Triaj Listesi</small>
+    </div>
+    <a href="/dashboard" class="btn btn-outline-light btn-sm">Panele Dön</a>
+  </div>
+
+  <div th:if="${#lists.isEmpty(triageRecords)}" class="alert alert-dark text-center py-5">
+    <i class="fas fa-check-circle fa-3x mb-3 d-block text-success"></i>
+    Şu an bekleyen hasta bulunmamaktadır.
+  </div>
+
+  <div class="row">
+    <div class="col-md-6 col-lg-4" th:each="t : ${triageRecords}">
+      <div class="card triage-card shadow position-relative" th:classappend="'priority-' + ${t.priority}">
+        <div class="card-body pt-4">
+
+          <div class="status-badge">
+            <span th:if="${t.status == 'TREATED'}" class="badge bg-secondary"><i class="fas fa-check-double"></i> MUAYENE EDİLDİ</span>
+            <span th:if="${t.status == 'WAITING' or t.status == null}" class="badge bg-primary"><i class="fas fa-clock"></i> BEKLİYOR</span>
+          </div>
+
+          <div class="mb-3">
+            <h4 class="fw-bold mb-0" th:text="${t.patient.firstName + ' ' + t.patient.lastName}"></h4>
+            <small class="text-muted">TC: <span th:text="${t.patient.tcNo}"></span></small>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-4">
+              <div class="vital-box">
+                <span class="vital-val text-danger" th:text="${(t.temperature ?: '0') + '°'}"></span>
+                <span class="small text-muted">Ateş</span>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="vital-box">
+                <span class="vital-val text-dark" th:text="${t.heartRate ?: '0'}"></span>
+                <span class="small text-muted">Nabız</span>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="vital-box">
+                <span class="vital-val text-primary" th:text="${(t.bloodPressureSystolic ?: '0') + '/' + (t.bloodPressureDiastolic ?: '0')}"></span>
+                <span class="small text-muted">Tansiyon</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-2 bg-white border rounded mb-3 small">
+            <strong>Şikayet:</strong> <span th:text="${t.symptoms ?: 'Belirtilmedi'}"></span>
+          </div>
+
+          <div class="d-grid gap-2">
+            <button th:if="${session.userType == 'DOCTOR'}"
+                    class="btn btn-primary btn-sm"
+                    data-bs-toggle="modal"
+                    data-bs-target="#triagePrescriptionModal"
+                    th:onclick="'prepareTriagePrescription(' + ${t.id} + ',' + ${session.userId} + ')'">
+              <i class="fas fa-pills"></i> Reçete Yaz
+            </button>
+
+            <button th:if="${session.userType == 'DOCTOR' and (t.status == 'WAITING' or t.status == null)}"
+                    class="btn btn-success shadow-sm"
+                    th:onclick="'completeTriage(' + ${t.id} + ')'">
+              <i class="fas fa-user-check"></i> Muayene Et
+            </button>
+
+            <a th:if="${session.userType == 'SECRETARY'}"
+               th:href="@{'/triage/edit/' + ${t.id}}"
+               class="btn btn-outline-primary btn-sm">
+              <i class="fas fa-edit"></i> Bilgileri Güncelle
+            </a>
+          </div>
+
+          <div class="mt-3 text-end text-muted x-small" style="font-size: 0.75rem;">
+            <i class="far fa-clock"></i> Giriş Zamanı: <span th:text="${#temporals.format(t.triageDate, 'HH:mm')}"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="triagePrescriptionModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content bg-dark text-white shadow-lg">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title text-info"><i class="fas fa-file-medical"></i> Acil Reçete Oluştur</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="triagePrescForm">
+          <input type="hidden" id="tp_triageId">
+          <input type="hidden" id="tp_doctorId">
+          <div class="mb-3">
+            <label class="form-label">İlaçlar</label>
+            <textarea id="tp_medications" class="form-control bg-secondary text-white border-0" rows="3" required placeholder="Örn: Parol (2x1)"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Notlar</label>
+            <input type="text" id="tp_notes" class="form-control bg-secondary text-white border-0" placeholder="Eczacıya veya hastaya not...">
+          </div>
+          <button type="submit" class="btn btn-info w-100">Reçeteyi Kaydet</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  function prepareTriagePrescription(triageId, docId) {
+    document.getElementById('tp_triageId').value = triageId;
+    document.getElementById('tp_doctorId').value = docId;
+  }
+
+  document.getElementById('triagePrescForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const data = {
+      triageId: document.getElementById('tp_triageId').value,
+      doctorId: document.getElementById('tp_doctorId').value,
+      medications: document.getElementById('tp_medications').value,
+      notes: document.getElementById('tp_notes').value
+    };
+
+    fetch('/prescriptions/api/triage', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    }).then(res => {
+      if(res.ok) {
+        alert("✅ Reçete başarıyla hastaya tanımlandı!");
+        bootstrap.Modal.getInstance(document.getElementById('triagePrescriptionModal')).hide();
+      } else {
+        alert("❌ Hata oluştu.");
+      }
+    });
+  });
+
+  function completeTriage(id) {
+    if(confirm("Bu hastanın muayenesini tamamlandı olarak işaretlemek istiyor musunuz?")) {
+      fetch('/triage/api/' + id + '/complete', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' }
+      })
+              .then(res => {
+                if(res.ok) {
+                  alert("Muayene başarıyla tamamlandı.");
+                  window.location.reload();
+                } else {
+                  alert("Hata oluştu!");
+                }
+              });
+    }
+  }
+</script>
+
 </body>
 </html>

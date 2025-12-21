@@ -1,7 +1,13 @@
 package com.hospital.management.controller;
 
+import com.hospital.management.model.Appointment;
+import com.hospital.management.model.Doctor;
 import com.hospital.management.model.Patient;
+import com.hospital.management.model.Prescription;
+import com.hospital.management.service.AppointmentService;
+import com.hospital.management.service.DoctorService;
 import com.hospital.management.service.PatientService;
+import com.hospital.management.service.PrescriptionService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -10,10 +16,14 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/patients")
@@ -23,29 +33,33 @@ public class PatientController {
     @Autowired
     private PatientService patientService;
 
+    @Autowired
+    private DoctorService doctorService;
+
+    @Autowired
+    private AppointmentService appointmentService;
+
+    @Autowired
+    private PrescriptionService prescriptionService;
+
     // ==========================================
-    //          GİRİŞ VE GÜVENLİK (SESSION)
+    //          GİRİŞ VE GÜVENLİK
     // ==========================================
 
-    // VİEW: Hasta Giriş Sayfası
     @GetMapping("/login")
     public String showLoginPage() {
         return "login-patient";
     }
 
-    // API: Hasta Giriş İşlemi (GÜNCELLENDİ: Şifre Kontrolü Eklendi)
     @PostMapping("/api/login")
     @ResponseBody
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials, HttpSession session) {
         String tcNo = credentials.get("tcNo");
-        String password = credentials.get("password"); // Şifreyi de alıyoruz
+        String password = credentials.get("password");
 
         Optional<Patient> patient = patientService.login(tcNo);
 
-        // Hem TC var mı, HEM DE şifre doğru mu kontrolü
         if (patient.isPresent() && password != null && password.equals(patient.get().getPassword())) {
-
-            // OTURUM BİLGİLERİNİ KAYDET
             session.setAttribute("userType", "PATIENT");
             session.setAttribute("userId", patient.get().getId());
             session.setAttribute("userName", patient.get().getFirstName() + " " + patient.get().getLastName());
@@ -68,7 +82,6 @@ public class PatientController {
         if (!"DOCTOR".equals(userType) && !"SECRETARY".equals(userType)) {
             return "redirect:/dashboard";
         }
-
         List<Patient> patients = patientService.getAllPatients();
         model.addAttribute("patients", patients);
         model.addAttribute("pageTitle", "Hasta Kayıt Listesi");
@@ -84,43 +97,110 @@ public class PatientController {
         return "patient-add";
     }
 
-    // YENİ EKLENEN MVC METODU: HTML Formundan gelen veriyi kaydeder
     @PostMapping("/add")
     public String savePatientFromForm(@ModelAttribute Patient patient) {
-        // --- OTOMATİK ŞİFRE OLUŞTURMA MANTIĞI ---
         generatePasswordForPatient(patient);
-        // ----------------------------------------
-
         patientService.savePatient(patient);
         return "redirect:/patients/view";
     }
 
+    // --- RANDEVU ALMA EKRANI ---
+    @GetMapping("/appointments/book")
+    public String showBookAppointmentPage(Model model, HttpSession session) {
+        Long patientId = (Long) session.getAttribute("userId");
+        if (patientId == null) return "redirect:/patients/login";
+
+        List<Doctor> doctors = doctorService.getAllDoctors();
+        List<String> departments = doctors.stream()
+                .map(Doctor::getSpecialization)
+                .distinct()
+                .collect(Collectors.toList());
+
+        model.addAttribute("doctors", doctors);
+        model.addAttribute("departments", departments);
+
+        return "patient-appointment-book";
+    }
+
+    // --- RANDEVU KAYDETME (DÜZELTİLDİ: Try-Catch Eklendi) ---
+    @PostMapping("/appointments/book")
+    public String bookAppointment(@RequestParam("doctorId") Long doctorId,
+                                  @RequestParam("appointmentDate") String dateStr,
+                                  HttpSession session) {
+
+        Long patientId = (Long) session.getAttribute("userId");
+        if (patientId == null) return "redirect:/patients/login";
+
+        try {
+            LocalDateTime date = LocalDateTime.parse(dateStr);
+            appointmentService.createAppointment(patientId, doctorId, date);
+
+            return "redirect:/dashboard?success=RandevuBasariylaOlusturuldu";
+
+        } catch (Exception e) {
+            e.printStackTrace(); // Hatanın terminalde görünmesi için
+
+            // Hatayı URL'e güvenli şekilde ekleyelim (Türkçe karakter sorunu olmasın)
+            String hataMesaji = "Islem basarisiz";
+            try {
+                hataMesaji = URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);
+            } catch (Exception ex) {}
+
+            return "redirect:/dashboard?error=" + hataMesaji;
+        }
+    }
+
+    // --- REÇETELERİM ---
+    @GetMapping("/prescriptions")
+    public String showPrescriptions(Model model, HttpSession session) {
+        Long patientId = (Long) session.getAttribute("userId");
+        if (patientId == null) return "redirect:/patients/login";
+
+        List<Prescription> myPrescriptions = prescriptionService.getPrescriptionsByPatient(patientId);
+        model.addAttribute("prescriptionList", myPrescriptions);
+
+        return "patient-prescriptions";
+    }
+
+    // --- ŞİFRE OLUŞTURUCU ---
+    private void generatePasswordForPatient(Patient patient) {
+        String tc = patient.getTcNo();
+        String telefon = patient.getPhone();
+        String temizTelefon = (telefon != null) ? telefon.replaceAll("\\D", "") : "";
+
+        if (tc != null && tc.length() >= 4 && temizTelefon.length() >= 4) {
+            String tcNinBasi = tc.substring(0, 4);
+            String telefonunSonu = temizTelefon.substring(temizTelefon.length() - 4);
+            patient.setPassword(telefonunSonu + tcNinBasi);
+        } else {
+            patient.setPassword("123456");
+        }
+    }
+
+    // Edit ve Detail (Değişiklik yok)
     @GetMapping("/edit/{id}")
     public String showEditPatientPage(@PathVariable Long id, Model model, HttpSession session) {
-        String userType = (String) session.getAttribute("userType");
-        if (!"DOCTOR".equals(userType) && !"SECRETARY".equals(userType)) {
-            return "redirect:/dashboard";
+        Optional<Patient> p = patientService.getPatientById(id);
+        if(p.isPresent()){
+            model.addAttribute("patient", p.get());
+            return "patient-edit";
         }
-
-        Patient patient = patientService.getPatientById(id)
-                .orElseThrow(() -> new RuntimeException("Hasta bulunamadı"));
-        model.addAttribute("patient", patient);
-
-        return "patient-edit";
+        return "redirect:/patients/view";
     }
 
     @GetMapping("/view/{id}")
     public String showPatientDetail(@PathVariable Long id, Model model) {
-        Patient patient = patientService.getPatientById(id)
-                .orElseThrow(() -> new RuntimeException("Hasta bulunamadı!"));
-        model.addAttribute("patient", patient);
-        return "patient-detail";
+        Optional<Patient> p = patientService.getPatientById(id);
+        if(p.isPresent()) {
+            model.addAttribute("patient", p.get());
+            return "patient-detail";
+        }
+        return "redirect:/patients/view";
     }
 
     // ==========================================
-    //          API (JSON) METODLARI
+    //          API METODLARI
     // ==========================================
-
     @GetMapping("/api")
     @ResponseBody
     public ResponseEntity<List<Patient>> getAllPatients() {
@@ -138,44 +218,12 @@ public class PatientController {
         }
     }
 
-    @GetMapping("/api/tc/{tcNo}")
-    @ResponseBody
-    public ResponseEntity<?> getPatientByTcNo(@PathVariable String tcNo) {
-        try {
-            return ResponseEntity.ok(patientService.getPatientByTcNo(tcNo)
-                    .orElseThrow(() -> new RuntimeException("Hasta bulunamadı")));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/api/search")
-    @ResponseBody
-    public ResponseEntity<List<Patient>> searchPatients(@RequestParam String name) {
-        return ResponseEntity.ok(patientService.searchPatientsByName(name));
-    }
-
     @PostMapping("/api")
     @ResponseBody
     public ResponseEntity<?> createPatient(@RequestBody Patient patient) {
         try {
-            // --- OTOMATİK ŞİFRE OLUŞTURMA MANTIĞI (API İÇİN DE) ---
             generatePasswordForPatient(patient);
-            // ------------------------------------------------------
-
             return ResponseEntity.status(HttpStatus.CREATED).body(patientService.savePatient(patient));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
-    }
-
-    @PutMapping("/api/{id}")
-    @ResponseBody
-    public ResponseEntity<?> updatePatient(@PathVariable Long id, @RequestBody Patient patient) {
-        try {
-            // Güncelleme yaparken şifre değişmesin istiyorsan buraya dokunma.
-            // Eğer şifreyi de değiştirebilsinler istersen buraya da mantık eklenebilir.
-            return ResponseEntity.ok(patientService.updatePatient(id, patient));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
@@ -192,27 +240,13 @@ public class PatientController {
         }
     }
 
-    private void generatePasswordForPatient(Patient patient) {
-        String tc = patient.getTcNo();
-        String telefon = patient.getPhone();
-
-        // Verileri temizleyelim (sadece rakam kalsın)
-        String temizTelefon = (telefon != null) ? telefon.replaceAll("\\D", "") : "";
-
-        // KONTROL: TC 11 hane mi VE Telefon geçerli uzunlukta mı?
-        if (tc != null && tc.length() >= 4 && temizTelefon.length() >= 4) {
-
-            String tcNinBasi = tc.substring(0, 4);
-            String telefonunSonu = temizTelefon.substring(temizTelefon.length() - 4);
-
-            // Şifre: TelSon4 + Tcİlk4
-            String olusanSifre = telefonunSonu + tcNinBasi;
-            patient.setPassword(olusanSifre);
-
-        } else {
-            // ARTIK 123456 YOK!
-            // Eğer bilgiler eksikse kayıt işlemini durduruyoruz.
-            throw new IllegalArgumentException("Otomatik şifre oluşturulamadı! Lütfen TC ve Telefon bilgilerini eksiksiz giriniz.");
+    @PutMapping("/api/{id}")
+    @ResponseBody
+    public ResponseEntity<?> updatePatient(@PathVariable Long id, @RequestBody Patient patient) {
+        try {
+            return ResponseEntity.ok(patientService.updatePatient(id, patient));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 }
