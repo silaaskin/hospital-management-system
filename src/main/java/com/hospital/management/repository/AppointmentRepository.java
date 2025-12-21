@@ -15,10 +15,10 @@ import java.util.List;
 @Repository
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
-    // Hastaya göre randevuları listele
+    // Hastaya göre tüm randevuları listele
     List<Appointment> findByPatient(Patient patient);
 
-    // Doktora göre randevuları listele
+    // Doktora göre tüm randevuları listele
     List<Appointment> findByDoctor(Doctor doctor);
 
     // Duruma göre randevuları listele
@@ -33,17 +33,17 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     // Belirli tarih aralığındaki randevuları listele
     List<Appointment> findByAppointmentDateBetween(LocalDateTime startDate, LocalDateTime endDate);
 
-    // Doktorun belirli tarihteki randevularını listele
+    // GÜNCELLEME: Çakışma kontrolü için doktorun iki tarih arasındaki bekleyen randevularını bulur
     @Query("SELECT a FROM Appointment a WHERE a.doctor = :doctor " +
             "AND a.appointmentDate BETWEEN :startDate AND :endDate " +
-            "AND a.status = :status")
+            "AND a.status = 'SCHEDULED'")
     List<Appointment> findDoctorAppointmentsByDateAndStatus(
             @Param("doctor") Doctor doctor,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             @Param("status") AppointmentStatus status);
 
-    // Hastanın gelecek randevularını listele
+    // Hastanın gelecek randevularını listele (Hata aldığınız metodun karşılığı)
     @Query("SELECT a FROM Appointment a WHERE a.patient = :patient " +
             "AND a.appointmentDate > :currentDate " +
             "AND a.status = 'SCHEDULED' " +
@@ -60,4 +60,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     List<Appointment> findUpcomingAppointmentsByDoctor(
             @Param("doctor") Doctor doctor,
             @Param("currentDate") LocalDateTime currentDate);
+
+    // YENİ: Doktorun belirli bir zaman aralığındaki (Örn: 30 dk) herhangi bir randevusunu kontrol eder
+    List<Appointment> findByDoctorAndAppointmentDateBetween(Doctor doctor, LocalDateTime start, LocalDateTime end);
 }

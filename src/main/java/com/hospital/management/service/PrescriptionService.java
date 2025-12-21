@@ -40,11 +40,9 @@ public class PrescriptionService {
         return prescriptionRepository.findByAppointment(appointment);
     }
 
-    // Doktora göre reçeteleri listele
+    // Doktora göre reçeteleri listele (Giriş yapan doktora göre filtrelenmiş)
     public List<Prescription> getPrescriptionsByDoctor(Long doctorId) {
-        Doctor doctor = doctorService.getDoctorById(doctorId)
-                .orElseThrow(() -> new RuntimeException("Doktor bulunamadı! ID: " + doctorId));
-        return prescriptionRepository.findByDoctor(doctor);
+        return prescriptionRepository.findByDoctorIdOrderByIdDesc(doctorId);
     }
 
     // Hastaya göre reçeteleri listele
@@ -52,7 +50,7 @@ public class PrescriptionService {
         return prescriptionRepository.findByPatientId(patientId);
     }
 
-    // Yeni reçete oluştur
+    // Randevu Üzerinden Yeni Reçete Oluştur
     public Prescription createPrescription(Long appointmentId, Long doctorId, Prescription prescription) {
         Appointment appointment = appointmentService.getAppointmentById(appointmentId)
                 .orElseThrow(() -> new RuntimeException("Randevu bulunamadı! ID: " + appointmentId));
@@ -60,20 +58,20 @@ public class PrescriptionService {
         Doctor doctor = doctorService.getDoctorById(doctorId)
                 .orElseThrow(() -> new RuntimeException("Doktor bulunamadı! ID: " + doctorId));
 
-        // Aynı randevu için reçete var mı kontrol et
         Optional<Prescription> existing = prescriptionRepository.findByAppointment(appointment);
         if (existing.isPresent()) {
             throw new RuntimeException("Bu randevu için zaten bir reçete mevcut!");
         }
 
         prescription.setAppointment(appointment);
+        prescription.setPatient(appointment.getPatient()); // Hastayı randevudan set ediyoruz
         prescription.setDoctor(doctor);
         prescription.setPrescriptionDate(LocalDate.now());
 
         return prescriptionRepository.save(prescription);
     }
 
-    // Reçete kaydet/güncelle
+    // Reçete kaydet (Triajdan gelen randevusuz kayıtlar için kullanılır)
     public Prescription savePrescription(Prescription prescription) {
         return prescriptionRepository.save(prescription);
     }

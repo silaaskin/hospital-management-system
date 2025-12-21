@@ -26,25 +26,44 @@ public class PatientService {
         return patientRepository.findByTcNo(tcNo);
     }
 
-    // --- LOGİN İŞLEMİ ---
     public Optional<Patient> login(String tcNo) {
         return patientRepository.findByTcNo(tcNo);
     }
 
-    // İsimle arama
     public List<Patient> searchPatientsByName(String name) {
         return patientRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(name, name);
     }
 
     public Patient savePatient(Patient patient) {
-        // TC No kontrolü yapılabilir (İsteğe bağlı)
-        if (patientRepository.existsByTcNo(patient.getTcNo())) {
-            // System.out.println("Bu TC zaten kayıtlı!");
+        // 1. Telefon Numarası Kontrolü (Tam 10 hane zorunluluğu)
+        if (patient.getPhone() == null || patient.getPhone().trim().isEmpty()) {
+            throw new RuntimeException("Telefon numarası boş bırakılamaz!");
         }
+
+        String cleanPhone = patient.getPhone().replaceAll("\\D", "");
+        if (cleanPhone.length() != 10) {
+            throw new RuntimeException("Telefon numarası başında sıfır olmadan tam 10 hane olmalıdır (Örn: 533XXXXXXX)!");
+        }
+        patient.setPhone(cleanPhone);
+
+        // 2. Mail Kontrolü
+        if (patient.getEmail() == null || patient.getEmail().trim().isEmpty()) {
+            throw new RuntimeException("E-posta adresi boş bırakılamaz!");
+        }
+
+        // 3. Kan Grubu Kontrolü
+        if (patient.getBloodType() == null || patient.getBloodType().trim().isEmpty()) {
+            throw new RuntimeException("Kan grubu seçimi zorunludur!");
+        }
+
+        // 4. Mükerrer TC Kontrolü
+        if (patient.getId() == null && patientRepository.existsByTcNo(patient.getTcNo())) {
+            throw new RuntimeException("Bu TC Kimlik numarası zaten kayıtlı!");
+        }
+
         return patientRepository.save(patient);
     }
 
-    // --- DÜZELTİLEN METOT BURASI ---
     public Patient updatePatient(Long id, Patient patientDetails) {
         Patient patient = patientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Hasta bulunamadı ID: " + id));
@@ -52,12 +71,15 @@ public class PatientService {
         patient.setFirstName(patientDetails.getFirstName());
         patient.setLastName(patientDetails.getLastName());
 
-        // DÜZELTME: setPhoneNumber yerine setPhone, getPhoneNumber yerine getPhone
-        patient.setPhone(patientDetails.getPhone());
+        String cleanPhone = patientDetails.getPhone().replaceAll("\\D", "");
+        if (cleanPhone.length() != 10) {
+            throw new RuntimeException("Güncelleme hatası: Telefon 10 hane olmalıdır!");
+        }
+        patient.setPhone(cleanPhone);
 
         patient.setTcNo(patientDetails.getTcNo());
-        // Varsa adres gibi diğer alanları da buraya ekleyebilirsin:
-        // patient.setAddress(patientDetails.getAddress());
+        patient.setEmail(patientDetails.getEmail());
+        patient.setBloodType(patientDetails.getBloodType());
 
         return patientRepository.save(patient);
     }

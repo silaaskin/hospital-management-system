@@ -18,8 +18,8 @@ public interface PrescriptionRepository extends JpaRepository<Prescription, Long
     // Randevuya göre reçete bul
     Optional<Prescription> findByAppointment(Appointment appointment);
 
-    // Doktora göre reçeteleri listele
-    List<Prescription> findByDoctor(Doctor doctor);
+    // Doktora göre reçeteleri listele (Doktor bazlı filtreleme için)
+    List<Prescription> findByDoctorIdOrderByIdDesc(Long doctorId);
 
     // Belirli tarih aralığındaki reçeteleri listele
     List<Prescription> findByPrescriptionDateBetween(LocalDate startDate, LocalDate endDate);
@@ -33,13 +33,13 @@ public interface PrescriptionRepository extends JpaRepository<Prescription, Long
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
 
-    // Hastanın tüm reçetelerini listele
-    @Query("SELECT p FROM Prescription p WHERE p.appointment.patient.id = :patientId " +
+    // Hastanın tüm reçetelerini listele (Triaj ve Randevu dahil)
+    @Query("SELECT p FROM Prescription p WHERE p.patient.id = :patientId " +
             "ORDER BY p.prescriptionDate DESC")
     List<Prescription> findByPatientId(@Param("patientId") Long patientId);
 
     // Hastanın son reçetelerini getir
-    @Query("SELECT p FROM Prescription p WHERE p.appointment.patient.id = :patientId " +
+    @Query("SELECT p FROM Prescription p WHERE p.patient.id = :patientId " +
             "ORDER BY p.prescriptionDate DESC")
     List<Prescription> findRecentByPatientId(@Param("patientId") Long patientId);
 }

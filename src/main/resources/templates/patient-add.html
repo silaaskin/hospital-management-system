@@ -28,8 +28,8 @@
         </div>
         <div class="row">
           <div class="col-md-6 mb-3">
-            <label class="form-label fw-bold">TC Kimlik No *</label>
-            <input type="text" id="tcNo" class="form-control" maxlength="11" required>
+            <label class="form-label fw-bold">TC Kimlik No (11 Hane) *</label>
+            <input type="text" id="tcNo" class="form-control" maxlength="11" minlength="11" required>
           </div>
           <div class="col-md-6 mb-3">
             <label class="form-label fw-bold">Doğum Tarihi</label>
@@ -42,19 +42,19 @@
 
         <div class="row">
           <div class="col-md-6 mb-3">
-            <label class="form-label fw-bold">Telefon *</label>
-            <input type="text" id="phone" class="form-control" required>
+            <label class="form-label fw-bold">Telefon (10 Hane - Başında 0 olmadan) *</label>
+            <input type="text" id="phone" class="form-control" placeholder="5XXXXXXXXX" maxlength="10" minlength="10" required>
           </div>
           <div class="col-md-6 mb-3">
-            <label class="form-label fw-bold">E-Posta</label>
-            <input type="email" id="email" class="form-control">
+            <label class="form-label fw-bold">E-Posta *</label>
+            <input type="email" id="email" class="form-control" required>
           </div>
         </div>
 
         <div class="row">
           <div class="col-md-4 mb-3">
-            <label class="form-label fw-bold">Kan Grubu</label>
-            <select id="bloodType" class="form-select">
+            <label class="form-label fw-bold">Kan Grubu *</label>
+            <select id="bloodType" class="form-select" required>
               <option value="">Seçiniz</option>
               <option value="A+">A Rh+</option>
               <option value="A-">A Rh-</option>
@@ -84,7 +84,6 @@
 <script>
   document.getElementById('addPatientForm').addEventListener('submit', function(e) {
     e.preventDefault();
-
     const patientData = {
       firstName: document.getElementById('firstName').value,
       lastName: document.getElementById('lastName').value,
@@ -100,15 +99,15 @@
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(patientData)
-    })
-            .then(response => {
-              if(response.ok) {
-                alert("✅ Hasta başarıyla kaydedildi!");
-                window.location.href = "/patients/view";
-              } else {
-                alert("❌ Hata! TC Kimlik No kayıtlı olabilir.");
-              }
-            });
+    }).then(async response => {
+      if(response.ok) {
+        alert("✅ Hasta başarıyla kaydedildi!");
+        window.location.href = "/patients/view";
+      } else {
+        const msg = await response.text();
+        alert("❌ Hata: " + msg);
+      }
+    });
   });
 </script>
 </body>

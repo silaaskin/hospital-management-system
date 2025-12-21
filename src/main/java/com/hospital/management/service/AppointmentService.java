@@ -24,12 +24,10 @@ public class AppointmentService {
     @Autowired
     private DoctorService doctorService;
 
-    // Tüm randevuları listele
     public List<Appointment> getAllAppointments() {
         return appointmentRepository.findAll();
     }
 
-    // ID'ye göre randevu bul
     public Optional<Appointment> getAppointmentById(Long id) {
         return appointmentRepository.findById(id);
     }
@@ -48,90 +46,86 @@ public class AppointmentService {
         return appointmentRepository.findByDoctor(doctor);
     }
 
-    // Duruma göre randevuları listele
+    // --- HATALARI GİDEREN YENİ METODLAR ---
+
+    // 1. Duruma göre randevuları listele (ONAYLANDI, İPTAL vb.)
     public List<Appointment> getAppointmentsByStatus(AppointmentStatus status) {
         return appointmentRepository.findByStatus(status);
     }
 
-    // Yeni randevu oluştur
-    public Appointment createAppointment(Long patientId, Long doctorId, LocalDateTime appointmentDate) {
+    // 2. Hastanın GELECEK randevularını listele
+    public List<Appointment> getUpcomingAppointmentsByPatient(Long patientId) {
         Patient patient = patientService.getPatientById(patientId)
-                .orElseThrow(() -> new RuntimeException("Hasta bulunamadı! ID: " + patientId));
+                .orElseThrow(() -> new RuntimeException("Hasta bulunamadı!"));
+        return appointmentRepository.findUpcomingAppointmentsByPatient(patient, LocalDateTime.now());
+    }
 
-        Doctor doctor = doctorService.getDoctorById(doctorId)
-                .orElseThrow(() -> new RuntimeException("Doktor bulunamadı! ID: " + doctorId));
+    // 3. Tarih aralığına göre randevular
+    public List<Appointment> getAppointmentsByDateRange(LocalDateTime start, LocalDateTime end) {
+        return appointmentRepository.findByAppointmentDateBetween(start, end);
+    }
 
-        // Geçmiş tarih kontrolü
+    // 4. Randevu Oluşturma (30 Dakika Çakışma Kontrolü Dahil)
+    public Appointment createAppointment(Long patientId, Long doctorId, LocalDateTime appointmentDate) {
         if (appointmentDate.isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Geçmiş tarih için randevu oluşturamazsınız!");
         }
 
+        Doctor doctor = doctorService.getDoctorById(doctorId).orElseThrow();
+
+        // 30 Dakikalık Aralık Kontrolü
+        LocalDateTime startRange = appointmentDate.minusMinutes(29);
+        LocalDateTime endRange = appointmentDate.plusMinutes(29);
+
+        // Repository üzerinden o aralıkta doktorun başka bir AKTİF randevusu var mı bakılır
+        List<Appointment> conflicts = appointmentRepository.findDoctorAppointmentsByDateAndStatus(
+                doctor, startRange, endRange, AppointmentStatus.SCHEDULED);
+
+        if (!conflicts.isEmpty()) {
+            throw new RuntimeException("Seçilen saatte doktorun başka bir randevusu bulunmaktadır. Lütfen en az 30 dakika sonrasını deneyin.");
+        }
+
+        Patient patient = patientService.getPatientById(patientId).orElseThrow();
         Appointment appointment = new Appointment(patient, doctor, appointmentDate);
         appointment.setStatus(AppointmentStatus.SCHEDULED);
+        return appointmentRepository.save(appointment);
+    }
+
+    // 5. Randevu GÜNCELLE
+    public Appointment updateAppointment(Long id, Appointment details) {
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Randevu bulunamadı! ID: " + id));
+
+        appointment.setAppointmentDate(details.getAppointmentDate());
+        appointment.setStatus(details.getStatus());
+        appointment.setNotes(details.getNotes());
+        appointment.setComplaints(details.getComplaints());
+        appointment.setDiagnosis(details.getDiagnosis());
 
         return appointmentRepository.save(appointment);
     }
 
-    // Randevu kaydet/güncelle
+    // 6. Randevu İPTAL ET
+    public Appointment cancelAppointment(Long id) {
+        Appointment app = appointmentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Randevu bulunamadı!"));
+        app.setStatus(AppointmentStatus.CANCELLED);
+        return appointmentRepository.save(app);
+    }
+
+    // 7. Randevu TAMAMLA
+    public Appointment completeAppointment(Long id) {
+        Appointment app = appointmentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Randevu bulunamadı!"));
+        app.setStatus(AppointmentStatus.COMPLETED);
+        return appointmentRepository.save(app);
+    }
+
     public Appointment saveAppointment(Appointment appointment) {
         return appointmentRepository.save(appointment);
     }
 
-    // Randevu güncelle
-    public Appointment updateAppointment(Long id, Appointment appointmentDetails) {
-        Appointment appointment = appointmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Randevu bulunamadı! ID: " + id));
-
-        appointment.setAppointmentDate(appointmentDetails.getAppointmentDate());
-        appointment.setStatus(appointmentDetails.getStatus());
-        appointment.setNotes(appointmentDetails.getNotes());
-        appointment.setComplaints(appointmentDetails.getComplaints());
-        appointment.setDiagnosis(appointmentDetails.getDiagnosis());
-
-        return appointmentRepository.save(appointment);
-    }
-
-    // Randevu iptal et
-    public Appointment cancelAppointment(Long id) {
-        Appointment appointment = appointmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Randevu bulunamadı! ID: " + id));
-
-        appointment.setStatus(AppointmentStatus.CANCELLED);
-        return appointmentRepository.save(appointment);
-    }
-
-    // Randevu tamamla
-    public Appointment completeAppointment(Long id) {
-        Appointment appointment = appointmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Randevu bulunamadı! ID: " + id));
-
-        appointment.setStatus(AppointmentStatus.COMPLETED);
-        return appointmentRepository.save(appointment);
-    }
-
-    // Randevu sil
     public void deleteAppointment(Long id) {
-        Appointment appointment = appointmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Randevu bulunamadı! ID: " + id));
-        appointmentRepository.delete(appointment);
-    }
-
-    // Hastanın gelecek randevularını getir
-    public List<Appointment> getUpcomingAppointmentsByPatient(Long patientId) {
-        Patient patient = patientService.getPatientById(patientId)
-                .orElseThrow(() -> new RuntimeException("Hasta bulunamadı! ID: " + patientId));
-        return appointmentRepository.findUpcomingAppointmentsByPatient(patient, LocalDateTime.now());
-    }
-
-    // Doktorun gelecek randevularını getir
-    public List<Appointment> getUpcomingAppointmentsByDoctor(Long doctorId) {
-        Doctor doctor = doctorService.getDoctorById(doctorId)
-                .orElseThrow(() -> new RuntimeException("Doktor bulunamadı! ID: " + doctorId));
-        return appointmentRepository.findUpcomingAppointmentsByDoctor(doctor, LocalDateTime.now());
-    }
-
-    // Belirli tarih aralığındaki randevuları getir
-    public List<Appointment> getAppointmentsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
-        return appointmentRepository.findByAppointmentDateBetween(startDate, endDate);
+        appointmentRepository.deleteById(id);
     }
 }
