@@ -21,6 +21,7 @@ public class PrescriptionController {
     @Autowired private PrescriptionService prescriptionService;
     @Autowired private TriageService triageService;
     @Autowired private DoctorService doctorService;
+    @Autowired private AppointmentService appointmentService;
 
     @GetMapping("/view")
     public String showAllPrescriptions(Model model, HttpSession session) {
@@ -29,18 +30,49 @@ public class PrescriptionController {
         if (userId == null) return "redirect:/";
 
         if ("PATIENT".equals(userType)) {
-            // Hasta sadece kendine yazılanları görür
             model.addAttribute("prescriptions", prescriptionService.getPrescriptionsByPatient(userId));
             model.addAttribute("pageTitle", "Reçetelerim");
         } else if ("DOCTOR".equals(userType)) {
-            // DEĞİŞİKLİK: Doktor sadece KENDİ yazdığı reçeteleri görür
-            List<Prescription> myPrescriptions = prescriptionService.getPrescriptionsByDoctor(userId);
-            model.addAttribute("prescriptions", myPrescriptions);
+            model.addAttribute("prescriptions", prescriptionService.getPrescriptionsByDoctor(userId));
             model.addAttribute("pageTitle", "Yazdığım Reçeteler");
         }
         return "prescriptions-list";
     }
 
+    // NORMAL RANDEVU REÇETESİ
+    @PostMapping("/api")
+    @ResponseBody
+    public ResponseEntity<?> createPrescription(@RequestBody Map<String, Object> data) {
+        try {
+            Long appointmentId = Long.valueOf(data.get("appointmentId").toString());
+            Long doctorId = Long.valueOf(data.get("doctorId").toString());
+
+            Appointment app = appointmentService.getAppointmentById(appointmentId).orElseThrow();
+            Doctor doctor = doctorService.getDoctorById(doctorId).orElseThrow();
+
+            Prescription p = new Prescription();
+            p.setAppointment(app);
+            p.setPatient(app.getPatient());
+            p.setDoctor(doctor);
+            p.setMedications(data.get("medications").toString());
+            p.setDosage(data.get("dosage") != null ? data.get("dosage").toString() : "");
+            p.setInstructions(data.get("instructions") != null ? data.get("instructions").toString() : "");
+
+            if(data.get("durationDays") != null && !data.get("durationDays").toString().isEmpty()) {
+                p.setDurationDays(Integer.valueOf(data.get("durationDays").toString()));
+            }
+
+            p.setNotes(data.get("notes") != null ? data.get("notes").toString() : "");
+            p.setPrescriptionDate(LocalDate.now());
+
+            prescriptionService.savePrescription(p);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    // TRİAJ (ACİL) REÇETESİ
     @PostMapping("/api/triage")
     @ResponseBody
     public ResponseEntity<?> createTriagePrescription(@RequestBody Map<String, Object> data) {
@@ -53,15 +85,13 @@ public class PrescriptionController {
 
             Prescription p = new Prescription();
             p.setDoctor(doctor);
-            p.setPatient(triage.getPatient()); // Hastayı triaj kaydından aldık
-            p.setAppointment(null);            // Randevu ID hatasını önlemek için null
+            p.setPatient(triage.getPatient());
+            p.setAppointment(null);
             p.setMedications(data.get("medications").toString());
             p.setNotes(data.get("notes") != null ? data.get("notes").toString() : "");
             p.setPrescriptionDate(LocalDate.now());
 
             prescriptionService.savePrescription(p);
-
-            // Muayene tamamlandığı için statü güncelle
             triageService.completeTriageMuayene(triageId);
 
             return ResponseEntity.ok().build();

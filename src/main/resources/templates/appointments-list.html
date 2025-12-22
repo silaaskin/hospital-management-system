@@ -147,8 +147,8 @@
             doctorId: document.getElementById('p_doctorId').value,
             medications: document.getElementById('p_medications').value,
             dosage: document.getElementById('p_dosage').value,
-            instructions: document.getElementById('p_instructions')?.value || "",
-            durationDays: document.getElementById('p_duration').value,
+            instructions: document.getElementById('p_instructions').value || "",
+            durationDays: document.getElementById('p_duration').value || null,
             notes: document.getElementById('p_notes').value
         };
 
@@ -158,14 +158,13 @@
             body: JSON.stringify(data)
         }).then(res => {
             if(res.ok) {
-                alert("✅ Reçete başarıyla kaydedildi! Hasta ekranında anında görüntülenecektir.");
+                alert("✅ Reçete başarıyla kaydedildi!");
                 window.location.reload();
             } else {
-                alert("❌ Reçete oluşturulurken bir hata meydana geldi.");
+                res.text().then(text => alert("❌ Hata: " + text));
             }
         });
     });
 </script>
-
 </body>
 </html>
