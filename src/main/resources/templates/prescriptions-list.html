@@ -32,14 +32,15 @@
 
         <div class="card-body">
           <h5 class="card-title text-dark mb-3">
-                        <span th:if="${session.userType == 'PATIENT'}">
-                            <i class="fas fa-user-md text-primary"></i>
-                            Dr. <span th:text="${item.doctor.firstName + ' ' + item.doctor.lastName}"></span>
-                        </span>
+            <span th:if="${session.userType == 'PATIENT'}">
+                <i class="fas fa-user-md text-primary"></i>
+                Dr. <span th:text="${item.doctor.firstName + ' ' + item.doctor.lastName}"></span>
+            </span>
+
             <span th:if="${session.userType == 'DOCTOR'}">
-                            <i class="fas fa-user-injured text-info"></i>
-                            Hasta: <span th:text="${item.appointment.patient.firstName + ' ' + item.appointment.patient.lastName}"></span>
-                        </span>
+                <i class="fas fa-user-injured text-info"></i>
+                Hasta: <span th:text="${item.patient.firstName + ' ' + item.patient.lastName}"></span>
+            </span>
           </h5>
 
           <hr>

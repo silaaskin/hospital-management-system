@@ -42,36 +42,57 @@ public class PrescriptionController {
     // NORMAL RANDEVU REÇETESİ
     @PostMapping("/api")
     @ResponseBody
-    public ResponseEntity<?> createPrescription(@RequestBody Map<String, Object> data) {
+    public ResponseEntity<?> createPrescription(@RequestBody Map<String, Object> prescriptionData) {
         try {
-            Long appointmentId = Long.valueOf(data.get("appointmentId").toString());
-            Long doctorId = Long.valueOf(data.get("doctorId").toString());
+            Long appointmentId = Long.valueOf(prescriptionData.get("appointmentId").toString());
+            Long doctorId = Long.valueOf(prescriptionData.get("doctorId").toString());
 
-            Appointment app = appointmentService.getAppointmentById(appointmentId).orElseThrow();
-            Doctor doctor = doctorService.getDoctorById(doctorId).orElseThrow();
+            // 1. Randevuyu ve Doktoru Doğrula
+            Appointment appointment = appointmentService.getAppointmentById(appointmentId)
+                    .orElseThrow(() -> new RuntimeException("Randevu bulunamadı!"));
+            Doctor doctor = doctorService.getDoctorById(doctorId)
+                    .orElseThrow(() -> new RuntimeException("Doktor bulunamadı!"));
 
-            Prescription p = new Prescription();
-            p.setAppointment(app);
-            p.setPatient(app.getPatient());
-            p.setDoctor(doctor);
-            p.setMedications(data.get("medications").toString());
-            p.setDosage(data.get("dosage") != null ? data.get("dosage").toString() : "");
-            p.setInstructions(data.get("instructions") != null ? data.get("instructions").toString() : "");
-
-            if(data.get("durationDays") != null && !data.get("durationDays").toString().isEmpty()) {
-                p.setDurationDays(Integer.valueOf(data.get("durationDays").toString()));
+            // 2. Hastayı Randevudan Al ve Geçerliliğini Kontrol Et
+            Patient patient = appointment.getPatient();
+            if (patient == null || patient.getId() == null || patient.getId() == 0) {
+                throw new RuntimeException("Bu randevuya bağlı geçerli bir hasta bulunamadı (ID 0 Hatası)!");
             }
 
-            p.setNotes(data.get("notes") != null ? data.get("notes").toString() : "");
-            p.setPrescriptionDate(LocalDate.now());
+            Prescription prescription = new Prescription();
+            prescription.setAppointment(appointment);
+            prescription.setPatient(patient); // Hastayı açıkça set ediyoruz
+            prescription.setDoctor(doctor);
 
-            prescriptionService.savePrescription(p);
-            return ResponseEntity.ok().build();
+            // 3. Verileri Doldur
+            if (prescriptionData.get("medications") != null)
+                prescription.setMedications(prescriptionData.get("medications").toString());
+
+            if(prescriptionData.containsKey("dosage"))
+                prescription.setDosage(prescriptionData.get("dosage").toString());
+
+            if(prescriptionData.containsKey("instructions"))
+                prescription.setInstructions(prescriptionData.get("instructions").toString());
+
+            if(prescriptionData.containsKey("durationDays") && !prescriptionData.get("durationDays").toString().isEmpty()) {
+                prescription.setDurationDays(Integer.valueOf(prescriptionData.get("durationDays").toString()));
+            }
+
+            if(prescriptionData.containsKey("notes"))
+                prescription.setNotes(prescriptionData.get("notes").toString());
+
+            prescription.setPrescriptionDate(LocalDate.now());
+
+            // 4. Kaydet
+            prescriptionService.savePrescription(prescription);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body("Reçete başarıyla kaydedildi.");
+
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Hata: " + e.getMessage());
         }
     }
-
     // TRİAJ (ACİL) REÇETESİ
     @PostMapping("/api/triage")
     @ResponseBody
