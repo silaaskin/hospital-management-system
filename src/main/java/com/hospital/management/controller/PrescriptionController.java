@@ -9,7 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import java.time.LocalDate;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -18,104 +19,125 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 public class PrescriptionController {
 
-    @Autowired private PrescriptionService prescriptionService;
-    @Autowired private TriageService triageService;
-    @Autowired private DoctorService doctorService;
-    @Autowired private AppointmentService appointmentService;
+    @Autowired
+    private PrescriptionService prescriptionService;
+
+    @Autowired
+    private TriageService triageService;
+
+    @Autowired
+    private DoctorService doctorService;
+
+    @Autowired
+    private AppointmentService appointmentService;
+
+    // ==========================================
+    //          1. GÖRÜNÜM METOTLARI (VIEW)
+    // ==========================================
 
     @GetMapping("/view")
     public String showAllPrescriptions(Model model, HttpSession session) {
         String userType = (String) session.getAttribute("userType");
         Long userId = (Long) session.getAttribute("userId");
+
         if (userId == null) return "redirect:/";
 
         if ("PATIENT".equals(userType)) {
+            // Hastanın kendi reçeteleri
             model.addAttribute("prescriptions", prescriptionService.getPrescriptionsByPatient(userId));
             model.addAttribute("pageTitle", "Reçetelerim");
         } else if ("DOCTOR".equals(userType)) {
+            // Doktorun yazdığı reçeteler
             model.addAttribute("prescriptions", prescriptionService.getPrescriptionsByDoctor(userId));
             model.addAttribute("pageTitle", "Yazdığım Reçeteler");
         }
         return "prescriptions-list";
     }
 
-    // NORMAL RANDEVU REÇETESİ
+    // ==========================================
+    //          2. API METODLARI (JSON)
+    // ==========================================
+
+    // NORMAL RANDEVU REÇETESİ OLUŞTURMA
     @PostMapping("/api")
     @ResponseBody
     public ResponseEntity<?> createPrescription(@RequestBody Map<String, Object> prescriptionData) {
         try {
             Long appointmentId = Long.valueOf(prescriptionData.get("appointmentId").toString());
             Long doctorId = Long.valueOf(prescriptionData.get("doctorId").toString());
+            String medications = prescriptionData.get("medications").toString();
 
-            // 1. Randevuyu ve Doktoru Doğrula
+            // Randevuyu ve Doktoru Doğrula
             Appointment appointment = appointmentService.getAppointmentById(appointmentId)
                     .orElseThrow(() -> new RuntimeException("Randevu bulunamadı!"));
             Doctor doctor = doctorService.getDoctorById(doctorId)
                     .orElseThrow(() -> new RuntimeException("Doktor bulunamadı!"));
 
-            // 2. Hastayı Randevudan Al ve Geçerliliğini Kontrol Et
-            Patient patient = appointment.getPatient();
-            if (patient == null || patient.getId() == null || patient.getId() == 0) {
-                throw new RuntimeException("Bu randevuya bağlı geçerli bir hasta bulunamadı (ID 0 Hatası)!");
-            }
-
+            // Reçete Nesnesini Oluştur
             Prescription prescription = new Prescription();
             prescription.setAppointment(appointment);
-            prescription.setPatient(patient); // Hastayı açıkça set ediyoruz
+            prescription.setPatient(appointment.getPatient());
             prescription.setDoctor(doctor);
+            prescription.setPrescriptionText(medications);
+            prescription.setCreatedDate(LocalDateTime.now());
 
-            // 3. Verileri Doldur
-            if (prescriptionData.get("medications") != null)
-                prescription.setMedications(prescriptionData.get("medications").toString());
-
-            if(prescriptionData.containsKey("dosage"))
-                prescription.setDosage(prescriptionData.get("dosage").toString());
-
-            if(prescriptionData.containsKey("instructions"))
-                prescription.setInstructions(prescriptionData.get("instructions").toString());
-
-            if(prescriptionData.containsKey("durationDays") && !prescriptionData.get("durationDays").toString().isEmpty()) {
-                prescription.setDurationDays(Integer.valueOf(prescriptionData.get("durationDays").toString()));
+            // Opsiyonel Alanlar
+            if (prescriptionData.containsKey("notes")) {
+                prescription.setNotes(prescriptionData.get("notes").toString());
             }
 
-            if(prescriptionData.containsKey("notes"))
-                prescription.setNotes(prescriptionData.get("notes").toString());
-
-            prescription.setPrescriptionDate(LocalDate.now());
-
-            // 4. Kaydet
             prescriptionService.savePrescription(prescription);
-
             return ResponseEntity.status(HttpStatus.CREATED).body("Reçete başarıyla kaydedildi.");
 
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Hata: " + e.getMessage());
         }
     }
-    // TRİAJ (ACİL) REÇETESİ
+
+    // TRİAJ (ACİL) REÇETESİ OLUŞTURMA
     @PostMapping("/api/triage")
     @ResponseBody
     public ResponseEntity<?> createTriagePrescription(@RequestBody Map<String, Object> data) {
         try {
             Long triageId = Long.valueOf(data.get("triageId").toString());
             Long doctorId = Long.valueOf(data.get("doctorId").toString());
+            String medications = data.get("medications").toString();
 
-            TriageRecord triage = triageService.getTriageRecordById(triageId).orElseThrow();
-            Doctor doctor = doctorService.getDoctorById(doctorId).orElseThrow();
+            // Triaj Kaydını ve Doktoru Al
+            TriageRecord triage = triageService.getTriageRecordById(triageId)
+                    .orElseThrow(() -> new RuntimeException("Triaj kaydı bulunamadı!"));
+            Doctor doctor = doctorService.getDoctorById(doctorId)
+                    .orElseThrow(() -> new RuntimeException("Doktor bulunamadı!"));
 
+            // Reçete Oluştur
             Prescription p = new Prescription();
             p.setDoctor(doctor);
             p.setPatient(triage.getPatient());
-            p.setAppointment(null);
-            p.setMedications(data.get("medications").toString());
-            p.setNotes(data.get("notes") != null ? data.get("notes").toString() : "");
-            p.setPrescriptionDate(LocalDate.now());
+            p.setAppointment(null); // Acil servis, randevusuzdur
+            p.setPrescriptionText(medications);
+            p.setCreatedDate(LocalDateTime.now());
+
+            if (data.containsKey("notes")) {
+                p.setNotes(data.get("notes").toString());
+            }
 
             prescriptionService.savePrescription(p);
+
+            // Muayeneyi tamamlandı olarak işaretle
             triageService.completeTriageMuayene(triageId);
 
-            return ResponseEntity.ok().build();
+            return ResponseEntity.ok("Acil reçetesi başarıyla oluşturuldu.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/api/{id}")
+    @ResponseBody
+    public ResponseEntity<?> deletePrescription(@PathVariable Long id) {
+        try {
+            prescriptionService.deletePrescription(id); //
+            return ResponseEntity.ok("Reçete silindi");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }

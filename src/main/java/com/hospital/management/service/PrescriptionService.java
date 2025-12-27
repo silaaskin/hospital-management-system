@@ -7,7 +7,7 @@ import com.hospital.management.repository.PrescriptionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime; // LocalDate yerine LocalDateTime eklendi
 import java.util.List;
 import java.util.Optional;
 
@@ -40,7 +40,7 @@ public class PrescriptionService {
         return prescriptionRepository.findByAppointment(appointment);
     }
 
-    // Doktora göre reçeteleri listele (Giriş yapan doktora göre filtrelenmiş)
+    // Doktora göre reçeteleri listele
     public List<Prescription> getPrescriptionsByDoctor(Long doctorId) {
         return prescriptionRepository.findByDoctorIdOrderByIdDesc(doctorId);
     }
@@ -64,14 +64,16 @@ public class PrescriptionService {
         }
 
         prescription.setAppointment(appointment);
-        prescription.setPatient(appointment.getPatient()); // Hastayı randevudan set ediyoruz
+        prescription.setPatient(appointment.getPatient());
         prescription.setDoctor(doctor);
-        prescription.setPrescriptionDate(LocalDate.now());
+
+        // HATA VEREN KISIM GÜNCELLENDİ: setPrescriptionDate(LocalDate.now()) -> setCreatedDate(LocalDateTime.now())
+        prescription.setCreatedDate(LocalDateTime.now());
 
         return prescriptionRepository.save(prescription);
     }
 
-    // Reçete kaydet (Triajdan gelen randevusuz kayıtlar için kullanılır)
+    // Reçete kaydet
     public Prescription savePrescription(Prescription prescription) {
         return prescriptionRepository.save(prescription);
     }
@@ -81,7 +83,8 @@ public class PrescriptionService {
         Prescription prescription = prescriptionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reçete bulunamadı! ID: " + id));
 
-        prescription.setMedications(prescriptionDetails.getMedications());
+        // Modelde alan isimlerini güncellediyseniz buraları da 'setPrescriptionText' olarak düzeltmelisiniz
+        prescription.setPrescriptionText(prescriptionDetails.getPrescriptionText());
         prescription.setDosage(prescriptionDetails.getDosage());
         prescription.setInstructions(prescriptionDetails.getInstructions());
         prescription.setDurationDays(prescriptionDetails.getDurationDays());
@@ -98,18 +101,18 @@ public class PrescriptionService {
     }
 
     // Tarih aralığına göre reçeteleri getir
-    public List<Prescription> getPrescriptionsByDateRange(LocalDate startDate, LocalDate endDate) {
-        return prescriptionRepository.findByPrescriptionDateBetween(startDate, endDate);
+    public List<Prescription> getPrescriptionsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
+        return prescriptionRepository.findByCreatedDateBetween(startDate, endDate);
     }
 
     // Doktorun belirli tarihteki reçetelerini getir
-    public List<Prescription> getDoctorPrescriptionsByDateRange(Long doctorId, LocalDate startDate, LocalDate endDate) {
+    public List<Prescription> getDoctorPrescriptionsByDateRange(Long doctorId, LocalDateTime startDate, LocalDateTime endDate) {
         Doctor doctor = doctorService.getDoctorById(doctorId)
                 .orElseThrow(() -> new RuntimeException("Doktor bulunamadı! ID: " + doctorId));
         return prescriptionRepository.findByDoctorAndDateRange(doctor, startDate, endDate);
     }
 
-    // Hastanın son reçetelerini getir (en fazla 10 adet)
+    // Hastanın son reçetelerini getir
     public List<Prescription> getRecentPrescriptionsByPatient(Long patientId) {
         List<Prescription> prescriptions = prescriptionRepository.findRecentByPatientId(patientId);
         return prescriptions.size() > 10 ? prescriptions.subList(0, 10) : prescriptions;
