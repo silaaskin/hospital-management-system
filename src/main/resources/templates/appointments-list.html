@@ -15,6 +15,7 @@
         .nav-link { color: #495057; font-weight: 500; }
         .modal-backdrop { display: none; }
         .modal.show { display: flex; align-items: center; justify-content: center; }
+        .action-buttons { gap: 0.5rem; }
     </style>
 </head>
 <body class="bg-light">
@@ -95,7 +96,7 @@
 <div class="modal fade" id="prescriptionModal" tabindex="-1" aria-labelledby="prescriptionModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
+            <div class="modal-header bg-info text-white">
                 <h5 class="modal-title" id="prescriptionModalLabel">
                     <i class="fas fa-prescription-bottle me-2"></i>Reçete Yaz
                 </h5>
@@ -108,14 +109,38 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Reçete Notları</label>
-                    <textarea class="form-control" id="prescriptionNotes" rows="5" placeholder="İlaç adı, doz, kullanım süresi vb. bilgileri yazınız..."></textarea>
+                    <textarea class="form-control" id="prescriptionNotes" rows="6" placeholder="İlaç adı, doz, kullanım süresi vb. bilgileri yazınız..."></textarea>
                 </div>
                 <div id="prescriptionError" class="alert alert-danger d-none"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                <button type="button" class="btn btn-primary" onclick="savePrescription()">
+                <button type="button" class="btn btn-info" onclick="savePrescription()">
                     <i class="fas fa-save me-1"></i>Reçeteyi Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Muayene Tamamlama Onay Modal -->
+<div class="modal fade" id="completeModal" tabindex="-1" aria-labelledby="completeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="completeModalLabel">
+                    <i class="fas fa-check-circle me-2"></i>Muayeneyi Tamamla
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Hastanın muayenesini tamamlandı olarak işaretlemek istediğinizi onaylıyor musunuz?</p>
+                <p class="mb-0"><strong>Hasta:</strong> <span id="completePatientName"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-success" onclick="confirmComplete()">
+                    <i class="fas fa-check me-1"></i>Evet, Tamamla
                 </button>
             </div>
         </div>
@@ -197,8 +222,11 @@
                     ${app.status === 'SCHEDULED' ? `
                         <div class="card-footer bg-transparent border-top pt-2 pb-3">
                             <div class="d-grid gap-2">
-                                <button class="btn btn-success btn-sm rounded-3" onclick="showPrescriptionModal(${app.id}, '${app.patientName}')">
-                                    <i class="fas fa-prescription-bottle me-1"></i>Reçete Yaz & Tamamla
+                                <button class="btn btn-success btn-sm rounded-3" onclick="showCompleteModal(${app.id}, '${app.patientName}')">
+                                    <i class="fas fa-check-circle me-1"></i>Muayene Bitti
+                                </button>
+                                <button class="btn btn-info btn-sm rounded-3" onclick="showPrescriptionModal(${app.id}, '${app.patientName}')">
+                                    <i class="fas fa-prescription-bottle me-1"></i>Reçete Yaz
                                 </button>
                             </div>
                         </div>
@@ -231,6 +259,30 @@
         }
     }
 
+    function showCompleteModal(appointmentId, patientName) {
+        currentAppointmentId = appointmentId;
+        document.getElementById('completePatientName').textContent = patientName;
+
+        const modal = new bootstrap.Modal(document.getElementById('completeModal'));
+        modal.show();
+    }
+
+    function confirmComplete() {
+        fetch('/appointments/api/' + currentAppointmentId + '/complete', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' }
+        })
+            .then(res => {
+                if (res.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('completeModal')).hide();
+                    loadAppointments();
+                } else {
+                    alert('Hata oluştu');
+                }
+            })
+            .catch(err => alert('Hata: ' + err.message));
+    }
+
     function showPrescriptionModal(appointmentId, patientName) {
         currentAppointmentId = appointmentId;
         document.getElementById('prescriptionPatient').value = patientName;
@@ -256,7 +308,7 @@
             prescription: notes
         };
 
-        fetch('/appointments/api/complete-with-prescription', {
+        fetch('/appointments/api/save-prescription', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -264,6 +316,7 @@
             .then(res => {
                 if (res.ok) {
                     bootstrap.Modal.getInstance(document.getElementById('prescriptionModal')).hide();
+                    alert('Reçete başarıyla kaydedildi');
                     loadAppointments();
                 } else {
                     throw new Error('Hata oluştu');

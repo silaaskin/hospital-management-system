@@ -56,47 +56,84 @@ public class AppointmentController {
         return "appointments-list";
     }
 
+    // Doktor için randevuları kategorilendirilmiş şekilde döndür
     @GetMapping("/api/doctor-appointments")
     @ResponseBody
     public ResponseEntity<?> getDoctorAppointments(HttpSession session) {
         Long doctorId = (Long) session.getAttribute("userId");
-        if (doctorId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Doktor ID bulunamadı");
+
+        if (doctorId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Doktor ID bulunamadı");
+        }
 
         List<Appointment> allApps = appointmentService.getAppointmentsByDoctor(doctorId);
+
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime todayEnd = LocalDate.now().atTime(LocalTime.MAX);
         LocalDateTime tomorrowStart = LocalDate.now().plusDays(1).atStartOfDay();
         LocalDateTime tomorrowEnd = LocalDate.now().plusDays(1).atTime(LocalTime.MAX);
 
         Map<String, Object> response = new HashMap<>();
+
         response.put("today", allApps.stream()
-                .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED && a.getAppointmentDate() != null)
-                .filter(a -> a.getAppointmentDate().isAfter(now.minusMinutes(1)) && a.getAppointmentDate().isBefore(todayEnd))
-                .map(this::convertToAppointmentDTO).collect(Collectors.toList()));
+                .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED)
+                .filter(a -> a.getAppointmentDate() != null)
+                .filter(a -> a.getAppointmentDate().isAfter(now.minusMinutes(1))
+                        && a.getAppointmentDate().isBefore(todayEnd))
+                .map(this::convertToAppointmentDTO)
+                .collect(Collectors.toList()));
 
         response.put("tomorrow", allApps.stream()
-                .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED && a.getAppointmentDate() != null)
-                .filter(a -> a.getAppointmentDate().isAfter(tomorrowStart) && a.getAppointmentDate().isBefore(tomorrowEnd))
-                .map(this::convertToAppointmentDTO).collect(Collectors.toList()));
+                .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED)
+                .filter(a -> a.getAppointmentDate() != null)
+                .filter(a -> a.getAppointmentDate().isAfter(tomorrowStart)
+                        && a.getAppointmentDate().isBefore(tomorrowEnd))
+                .map(this::convertToAppointmentDTO)
+                .collect(Collectors.toList()));
 
         response.put("pending", allApps.stream()
-                .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED && a.getAppointmentDate() != null)
-                .map(this::convertToAppointmentDTO).collect(Collectors.toList()));
+                .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED)
+                .filter(a -> a.getAppointmentDate() != null)
+                .map(this::convertToAppointmentDTO)
+                .collect(Collectors.toList()));
 
         response.put("completed", allApps.stream()
                 .filter(a -> a.getStatus() == AppointmentStatus.COMPLETED)
-                .map(this::convertToAppointmentDTO).collect(Collectors.toList()));
+                .map(this::convertToAppointmentDTO)
+                .collect(Collectors.toList()));
 
         response.put("cancelled", allApps.stream()
                 .filter(a -> a.getStatus() == AppointmentStatus.CANCELLED)
-                .map(this::convertToAppointmentDTO).collect(Collectors.toList()));
+                .map(this::convertToAppointmentDTO)
+                .collect(Collectors.toList()));
 
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/api/complete-with-prescription")
+    // Muayeneyi tamamla (reçete yazılmadan)
+    @PutMapping("/api/{appointmentId}/complete")
     @ResponseBody
-    public ResponseEntity<?> completeWithPrescription(@RequestBody Map<String, Object> data) {
+    public ResponseEntity<?> completeAppointment(@PathVariable Long appointmentId) {
+        try {
+            Appointment appointment = appointmentRepository.findById(appointmentId)
+                    .orElseThrow(() -> new Exception("Randevu bulunamadı"));
+
+            appointment.setStatus(AppointmentStatus.COMPLETED);
+            appointmentRepository.save(appointment);
+
+            return ResponseEntity.ok(appointment);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new HashMap<String, String>() {{
+                        put("error", e.getMessage());
+                    }});
+        }
+    }
+
+    // Reçeteyi kaydet (muayene tamamlanmış olabilir veya olmayabilir)
+    @PostMapping("/api/save-prescription")
+    @ResponseBody
+    public ResponseEntity<?> savePrescription(@RequestBody Map<String, Object> data) {
         try {
             Long appointmentId = Long.valueOf(data.get("appointmentId").toString());
             String prescriptionText = data.get("prescription").toString();
@@ -104,9 +141,7 @@ public class AppointmentController {
             Appointment appointment = appointmentRepository.findById(appointmentId)
                     .orElseThrow(() -> new Exception("Randevu bulunamadı"));
 
-            appointment.setStatus(AppointmentStatus.COMPLETED);
-            appointmentRepository.save(appointment);
-
+            // Reçeteyi kaydet
             if (prescriptionService != null && appointment.getPatient() != null) {
                 Prescription prescription = new Prescription();
                 prescription.setAppointment(appointment);
@@ -116,18 +151,28 @@ public class AppointmentController {
                 prescription.setCreatedDate(LocalDateTime.now());
                 prescriptionService.savePrescription(prescription);
             }
-            return ResponseEntity.ok(appointment);
+
+            return ResponseEntity.ok(new HashMap<String, String>() {{
+                put("message", "Reçete başarıyla kaydedildi");
+            }});
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new HashMap<String, String>() {{
+                        put("error", e.getMessage());
+                    }});
         }
     }
 
+    // MHRS tarzı saat doluluk kontrolü
     @GetMapping("/api/busy-slots")
     @ResponseBody
     public List<String> getBusySlots(@RequestParam Long doctorId, @RequestParam String date) {
         LocalDate localDate = LocalDate.parse(date);
+        LocalDateTime startOfDay = localDate.atStartOfDay();
+        LocalDateTime endOfDay = localDate.atTime(LocalTime.MAX);
+
         List<Appointment> apps = appointmentRepository.findByAppointmentDateBetweenAndStatus(
-                localDate.atStartOfDay(), localDate.atTime(LocalTime.MAX), AppointmentStatus.SCHEDULED);
+                startOfDay, endOfDay, AppointmentStatus.SCHEDULED);
 
         return apps.stream()
                 .filter(a -> a.getDoctor().getId().equals(doctorId))
@@ -149,33 +194,30 @@ public class AppointmentController {
         }
     }
 
+    // DTO dönüştürme helper metodu
     private Map<String, Object> convertToAppointmentDTO(Appointment app) {
         Map<String, Object> dto = new HashMap<>();
         dto.put("id", app.getId());
         dto.put("appointmentDate", app.getAppointmentDate());
         dto.put("status", app.getStatus());
-        dto.put("patientName", app.getPatient() != null ? app.getPatient().getFullName() : "Bilinmeyen");
+        dto.put("patientName", app.getPatient() != null ?
+                app.getPatient().getFirstName() + " " + app.getPatient().getLastName() : "Bilinmeyen");
         dto.put("patientTcNo", app.getPatient() != null ? app.getPatient().getTcNo() : "---");
         return dto;
     }
 
     private void prepareAppointmentLists(Model model, List<Appointment> sourceList) {
-        List<Appointment> apps = (sourceList != null) ? sourceList : new ArrayList<>();
-        List<Appointment> validApps = apps.stream()
-                .filter(a -> a != null && a.getAppointmentDate() != null)
+        if (sourceList == null) sourceList = new ArrayList<>();
+        List<Appointment> validApps = sourceList.stream()
+                .filter(a -> a.getAppointmentDate() != null)
                 .collect(Collectors.toList());
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime todayEnd = LocalDate.now().atTime(LocalTime.MAX);
-        LocalDateTime tomorrowStart = LocalDate.now().plusDays(1).atStartOfDay();
-        LocalDateTime tomorrowEnd = LocalDate.now().plusDays(1).atTime(LocalTime.MAX);
 
         model.addAttribute("todayApps", validApps.stream()
-                .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED && a.getAppointmentDate().isBefore(todayEnd))
-                .collect(Collectors.toList()));
-
-        model.addAttribute("tomorrowApps", validApps.stream()
-                .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED && a.getAppointmentDate().isAfter(tomorrowStart) && a.getAppointmentDate().isBefore(tomorrowEnd))
+                .filter(a -> a.getAppointmentDate().isAfter(now.minusMinutes(1)) && a.getAppointmentDate().isBefore(todayEnd))
+                .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED)
                 .collect(Collectors.toList()));
 
         model.addAttribute("pendingApps", validApps.stream()
@@ -184,10 +226,6 @@ public class AppointmentController {
 
         model.addAttribute("completedApps", validApps.stream()
                 .filter(a -> a.getStatus() == AppointmentStatus.COMPLETED)
-                .collect(Collectors.toList()));
-
-        model.addAttribute("cancelledApps", validApps.stream()
-                .filter(a -> a.getStatus() == AppointmentStatus.CANCELLED)
                 .collect(Collectors.toList()));
 
         model.addAttribute("appointments", validApps);
