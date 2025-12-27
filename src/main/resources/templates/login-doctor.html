@@ -2,25 +2,165 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Doktor Girişi</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #e9ecef; font-family: sans-serif; }
-    .login-box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.1); width: 300px; text-align: center; }
-    input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-    button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
-    button:hover { background: #0056b3; }
-    .error { color: red; margin-top: 10px; font-size: 14px; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .login-wrapper {
+      width: 100%;
+      max-width: 450px;
+    }
+    .login-card {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 15px 45px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    .login-header {
+      background: linear-gradient(135deg, #1e40af 0%, #0f3460 100%);
+      color: white;
+      padding: 40px 30px;
+      text-align: center;
+    }
+    .login-header i {
+      font-size: 3.5rem;
+      margin-bottom: 15px;
+      display: block;
+    }
+    .login-header h3 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+    .login-header p {
+      font-size: 0.95rem;
+      opacity: 0.9;
+    }
+    .login-body {
+      padding: 40px;
+    }
+    .form-group {
+      margin-bottom: 25px;
+    }
+    .form-label {
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .form-control {
+      padding: 12px 15px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: all 0.3s;
+    }
+    .form-control:focus {
+      border-color: #1e40af;
+      box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+      outline: none;
+    }
+    .form-control::placeholder {
+      color: #9ca3af;
+    }
+    .login-btn {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, #1e40af 0%, #0f3460 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1.05rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-top: 10px;
+    }
+    .login-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(30, 64, 175, 0.3);
+    }
+    .login-btn:active {
+      transform: translateY(0);
+    }
+    .error-message {
+      color: #dc2626;
+      font-size: 0.9rem;
+      margin-top: 8px;
+      padding: 10px;
+      background: #fee2e2;
+      border-radius: 6px;
+      border-left: 4px solid #dc2626;
+      display: none;
+    }
+    .error-message.show {
+      display: block;
+    }
+    .back-link {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .back-link a {
+      color: #1e40af;
+      text-decoration: none;
+      font-weight: 500;
+      transition: 0.3s;
+    }
+    .back-link a:hover {
+      color: #0f3460;
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
-<div class="login-box">
-  <h2>Doktor Girişi</h2>
-  <form id="docForm">
-    <input type="text" id="username" placeholder="Kullanıcı Adı" required>
-    <input type="password" id="password" placeholder="Şifre" required>
-    <button type="submit">Giriş Yap</button>
-  </form>
-  <div id="msg" class="error"></div>
+
+<div class="login-wrapper">
+  <div class="login-card">
+    <div class="login-header">
+      <i class="fas fa-stethoscope"></i>
+      <h3>Doktor Girişi</h3>
+      <p>Sağlık Yönetim Sistemi</p>
+    </div>
+
+    <div class="login-body">
+      <form id="docForm">
+        <div class="form-group">
+          <label for="username" class="form-label">
+            <i class="fas fa-user me-1"></i> Kullanıcı Adı
+          </label>
+          <input type="text" id="username" class="form-control" placeholder="Kullanıcı adınızı girin" required>
+        </div>
+
+        <div class="form-group">
+          <label for="password" class="form-label">
+            <i class="fas fa-lock me-1"></i> Şifre
+          </label>
+          <input type="password" id="password" class="form-control" placeholder="Şifrenizi girin" required>
+        </div>
+
+        <button type="submit" class="login-btn">
+          <i class="fas fa-sign-in-alt me-1"></i> Giriş Yap
+        </button>
+
+        <div id="msg" class="error-message"></div>
+      </form>
+
+      <div class="back-link">
+        <a href="/" class="text-decoration-none"><i class="fas fa-arrow-left"></i> Giriş Seçimine Dön</a>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -36,10 +176,21 @@
     })
             .then(res => res.json())
             .then(data => {
-              if(data.success) window.location.href = '/dashboard';
-              else document.getElementById('msg').innerText = "Giriş başarısız!";
-            }).catch(err => document.getElementById('msg').innerText = "Hata oluştu.");
+              if(data.success) {
+                window.location.href = '/dashboard';
+              } else {
+                const errorDiv = document.getElementById('msg');
+                errorDiv.innerText = "❌ Kullanıcı adı veya şifre hatalı!";
+                errorDiv.classList.add('show');
+              }
+            })
+            .catch(err => {
+              const errorDiv = document.getElementById('msg');
+              errorDiv.innerText = "❌ Bağlantı hatası oluştu!";
+              errorDiv.classList.add('show');
+            });
   });
 </script>
+
 </body>
 </html>

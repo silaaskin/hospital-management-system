@@ -2,60 +2,167 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
-  <title>Randevu Planla - MHRS Yapısı</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Randevu Planlama</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    .slot-btn { width: 90px; margin: 4px; font-weight: bold; }
-    .day-btn { min-width: 140px; margin-right: 10px; border-radius: 12px; }
-    .selected-item { background-color: #0d6efd !important; color: white !important; }
-    .days-scroll { display: flex; overflow-x: auto; padding-bottom: 10px; scroll-behavior: smooth; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%); min-height: 100vh; padding: 40px 20px; }
+    .navbar-custom { background: linear-gradient(90deg, #1e40af 0%, #0f3460 100%); box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 40px; }
+    .navbar-brand { font-size: 1.3rem; font-weight: 700; color: white !important; }
+    .container-wrapper { max-width: 900px; margin: 0 auto; }
+    .booking-card { background: white; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); overflow: hidden; }
+    .card-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; text-align: center; }
+    .card-header h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 10px; }
+    .card-header p { opacity: 0.9; margin-bottom: 0; }
+    .card-body { padding: 40px; }
+    .step-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #667eea; }
+    .step-number { background: linear-gradient(135deg, #667eea, #764ba2); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; flex-shrink: 0; }
+    .step-title { font-size: 1.2rem; font-weight: 600; color: #1f2937; }
+    .form-group { margin-bottom: 25px; }
+    .form-label { font-weight: 600; color: #1f2937; margin-bottom: 10px; display: block; }
+    .form-select, .form-control { padding: 12px 15px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.95rem; transition: all 0.3s; }
+    .form-select:focus, .form-control:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); outline: none; }
+    .section-divider { height: 2px; background: #e5e7eb; margin: 35px 0; }
+    .day-selector { display: flex; flex-direction: column; gap: 0; }
+    .days-scroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 15px; scroll-behavior: smooth; }
+    .day-btn { background: white; border: 2px solid #e5e7eb; border-radius: 10px; padding: 15px 20px; text-align: center; cursor: pointer; transition: all 0.3s; min-width: 140px; font-weight: 600; white-space: nowrap; color: #374151; }
+    .day-btn:hover { border-color: #667eea; background: #f3f4f6; }
+    .day-btn.selected { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-color: #667eea; }
+    .day-name { font-size: 0.85rem; color: #6b7280; }
+    .day-date { font-size: 1rem; margin-top: 5px; }
+    .time-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; margin-top: 15px; }
+    .time-slot { padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.3s; font-weight: 600; }
+    .time-slot:hover:not(.disabled) { border-color: #667eea; background: #f3f4f6; }
+    .time-slot.selected { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-color: #667eea; }
+    .time-slot.disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; border-color: #d1d5db; }
+    .summary-box { background: #f9fafb; border-left: 4px solid #667eea; padding: 20px; border-radius: 8px; margin-top: 30px; }
+    .summary-item { display: flex; justify-content: space-between; margin-bottom: 12px; }
+    .summary-label { font-weight: 600; color: #6b7280; }
+    .summary-value { color: #1f2937; font-weight: 600; }
+    .button-group { display: flex; gap: 15px; margin-top: 35px; }
+    .btn-submit { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 14px 40px; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; flex: 1; }
+    .btn-submit:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3); color: white; }
+    .btn-submit:disabled { background: #d1d5db; color: #9ca3af; cursor: not-allowed; }
+    .btn-cancel { background: #e5e7eb; color: #374151; padding: 14px 40px; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.3s; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; flex: 1; }
+    .btn-cancel:hover { background: #d1d5db; color: #374151; }
+    .info-badge { background: #dbeafe; color: #1e40af; padding: 8px 12px; border-radius: 6px; font-weight: 500; font-size: 0.85rem; }
+    .hidden-section { display: none; }
+    @media (max-width: 768px) {
+      .card-header { padding: 30px; }
+      .card-body { padding: 25px; }
+      .time-slots { grid-template-columns: repeat(3, 1fr); }
+      .button-group { flex-direction: column; }
+    }
   </style>
 </head>
-<body class="bg-light">
+<body>
 
-<div class="container mt-5">
-  <div class="card shadow-lg border-0">
-    <div class="card-header bg-primary text-white text-center py-3">
-      <h4 class="mb-0"><i class="fas fa-hospital-user me-2"></i> Akıllı Randevu Sistemi</h4>
+<nav class="navbar navbar-dark navbar-custom">
+  <div class="container-fluid">
+    <span class="navbar-brand"><i class="fas fa-hospital"></i> Hastane Yönetim Sistemi</span>
+  </div>
+</nav>
+
+<div class="container-wrapper">
+  <div class="booking-card">
+    <div class="card-header">
+      <h2><i class="fas fa-hospital-user"></i> Akıllı Randevu Sistemi</h2>
+      <p>MHRS Tarzı Modern Randevu Planlama</p>
     </div>
-    <div class="card-body p-4">
-      <form action="/patients/appointments/book" method="post">
 
-        <div class="mb-4">
-          <label class="form-label fw-bold"><i class="fas fa-stethoscope text-primary"></i> 1. Poliklinik Seçiniz</label>
-          <select id="departmentSelect" class="form-select form-select-lg" onchange="filterDoctorsByDept()" required>
-            <option value="" selected disabled>-- Branş Seçiniz --</option>
+    <div class="card-body">
+      <form action="/patients/appointments/book" method="post" id="bookingForm">
+        <!-- ADIM 1: POLİKLİNİK SEÇİMİ -->
+        <div class="form-group">
+          <div class="step-header">
+            <div class="step-number">1</div>
+            <div class="step-title">Branş Seçiniz</div>
+          </div>
+          <label class="form-label"><i class="fas fa-stethoscope"></i> Poliklinik</label>
+          <select id="departmentSelect" class="form-select" onchange="filterDoctorsByDept()" required>
+            <option value="" disabled selected>-- Branş Seçiniz --</option>
             <option th:each="dept : ${departments}" th:value="${dept}" th:text="${dept}"></option>
           </select>
         </div>
 
-        <div id="doctorArea" class="mb-4 d-none">
-          <label class="form-label fw-bold"><i class="fas fa-user-md text-primary"></i> 2. Doktor Seçiniz</label>
-          <select name="doctorId" id="doctorSelect" class="form-select form-select-lg" onchange="showDays()" required>
-            <option value="" selected disabled>-- Önce Branş Seçiniz --</option>
-            <option th:each="doc : ${doctors}"
-                    th:value="${doc.id}"
-                    th:data-dept="${doc.specialization}"
-                    th:text="${'Dr. ' + doc.firstName + ' ' + doc.lastName}"></option>
-          </select>
+        <!-- ADIM 2: DOKTOR SEÇİMİ -->
+        <div id="doctorArea" class="hidden-section">
+          <div class="section-divider"></div>
+          <div class="form-group">
+            <div class="step-header">
+              <div class="step-number">2</div>
+              <div class="step-title">Doktor Seçiniz</div>
+            </div>
+            <label class="form-label"><i class="fas fa-user-md"></i> Doktor</label>
+            <select name="doctorId" id="doctorSelect" class="form-select" onchange="showDays()" required>
+              <option value="" disabled selected>-- Önce Branş Seçiniz --</option>
+              <option th:each="doc : ${doctors}"
+                      th:value="${doc.id}"
+                      th:data-dept="${doc.specialization}"
+                      th:text="${'Dr. ' + doc.firstName + ' ' + doc.lastName}"></option>
+            </select>
+          </div>
         </div>
 
-        <div id="dayArea" class="mb-4 d-none">
-          <label class="form-label fw-bold"><i class="fas fa-calendar-day text-primary"></i> 3. Tarih Seçiniz</label>
-          <div id="daysList" class="days-scroll"></div>
-          <input type="hidden" id="selectedDate">
+        <!-- ADIM 3: TARİH SEÇİMİ -->
+        <div id="dayArea" class="hidden-section">
+          <div class="section-divider"></div>
+          <div class="form-group">
+            <div class="step-header">
+              <div class="step-number">3</div>
+              <div class="step-title">Tarih Seçiniz</div>
+            </div>
+            <label class="form-label"><i class="fas fa-calendar"></i> Uygun Tarihler</label>
+            <div class="day-selector">
+              <div class="days-scroll" id="daysList"></div>
+            </div>
+            <input type="hidden" id="selectedDate">
+          </div>
         </div>
 
-        <div id="timeArea" class="mb-4 d-none">
-          <label class="form-label fw-bold"><i class="fas fa-clock text-primary"></i> 4. Saat Dilimi Seçiniz</label>
-          <div id="slotsContainer" class="d-flex flex-wrap border p-3 rounded bg-white"></div>
-          <input type="hidden" id="finalDateTime" name="appointmentDate" required>
+        <!-- ADIM 4: SAAT SEÇİMİ -->
+        <div id="timeArea" class="hidden-section">
+          <div class="section-divider"></div>
+          <div class="form-group">
+            <div class="step-header">
+              <div class="step-number">4</div>
+              <div class="step-title">Saat Dilimi Seçiniz</div>
+            </div>
+            <label class="form-label"><i class="fas fa-clock"></i> Uygun Saatler</label>
+            <div id="slotsContainer" class="time-slots"></div>
+            <input type="hidden" id="finalDateTime" name="appointmentDate" required>
+          </div>
         </div>
 
-        <div class="d-grid gap-2 mt-4">
-          <button type="submit" id="submitBtn" class="btn btn-success btn-lg shadow" disabled>
-            <i class="fas fa-check-circle me-2"></i> Randevuyu Tamamla
+        <!-- ÖZET -->
+        <div id="summaryArea" class="hidden-section">
+          <div class="summary-box">
+            <h5 style="margin-bottom: 15px; color: #1f2937;">📋 Randevu Özeti</h5>
+            <div class="summary-item">
+              <span class="summary-label">Branş:</span>
+              <span class="summary-value info-badge" id="summaryDept">-</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Doktor:</span>
+              <span class="summary-value" id="summaryDoctor">-</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Tarih:</span>
+              <span class="summary-value" id="summaryDate">-</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Saat:</span>
+              <span class="summary-value" id="summaryTime">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- BUTONLAR -->
+        <div class="button-group">
+          <button type="submit" id="submitBtn" class="btn-submit" disabled>
+            <i class="fas fa-check-circle"></i> Randevuyu Tamamla
           </button>
         </div>
       </form>
@@ -71,10 +178,11 @@
     const docSelect = document.getElementById('doctorSelect');
     const options = docSelect.getElementsByTagName('option');
 
-    document.getElementById('doctorArea').classList.remove('d-none');
+    document.getElementById('doctorArea').classList.remove('hidden-section');
     docSelect.value = "";
-    document.getElementById('dayArea').classList.add('d-none');
-    document.getElementById('timeArea').classList.add('d-none');
+    document.getElementById('dayArea').classList.add('hidden-section');
+    document.getElementById('timeArea').classList.add('hidden-section');
+    document.getElementById('summaryArea').classList.add('hidden-section');
 
     for (let opt of options) {
       if (!opt.getAttribute('data-dept')) continue;
@@ -85,8 +193,9 @@
   function showDays() {
     const daysList = document.getElementById('daysList');
     daysList.innerHTML = '';
-    document.getElementById('dayArea').classList.remove('d-none');
-    document.getElementById('timeArea').classList.add('d-none');
+    document.getElementById('dayArea').classList.remove('hidden-section');
+    document.getElementById('timeArea').classList.add('hidden-section');
+    document.getElementById('summaryArea').classList.add('hidden-section');
 
     for (let i = 1; i <= 7; i++) {
       let d = new Date();
@@ -95,16 +204,16 @@
 
       let btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'btn btn-outline-primary day-btn p-3';
-      btn.innerHTML = `<strong>${d.toLocaleDateString('tr-TR', {weekday: 'long'})}</strong><br>${dateStr}`;
+      btn.className = 'day-btn';
+      btn.innerHTML = `<div class="day-name">${d.toLocaleDateString('tr-TR', {weekday: 'short'})}</div><div class="day-date">${dateStr}</div>`;
       btn.onclick = () => selectDay(dateStr, btn);
       daysList.appendChild(btn);
     }
   }
 
   function selectDay(date, btn) {
-    document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('selected-item'));
-    btn.classList.add('selected-item');
+    document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
     document.getElementById('selectedDate').value = date;
 
     const docId = document.getElementById('doctorSelect').value;
@@ -119,26 +228,40 @@
   function renderTimeSlots(busySlots, date) {
     const container = document.getElementById('slotsContainer');
     container.innerHTML = '';
-    document.getElementById('timeArea').classList.remove('d-none');
+    document.getElementById('timeArea').classList.remove('hidden-section');
+    document.getElementById('summaryArea').classList.remove('hidden-section');
 
     timeSlots.forEach(s => {
       const isBusy = busySlots.some(b => b.startsWith(s));
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = `btn slot-btn ${isBusy ? 'btn-danger disabled' : 'btn-outline-success'}`;
+      btn.className = `time-slot ${isBusy ? 'disabled' : ''}`;
       btn.innerText = s;
 
       if (!isBusy) {
         btn.onclick = () => {
-          document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected-item'));
-          btn.classList.add('selected-item');
+          document.querySelectorAll('.time-slot').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
           document.getElementById('finalDateTime').value = date + 'T' + s;
           document.getElementById('submitBtn').disabled = false;
+          updateSummary(date, s);
         };
       }
       container.appendChild(btn);
     });
   }
+
+  function updateSummary(date, time) {
+    const deptSelect = document.getElementById('departmentSelect');
+    const docSelect = document.getElementById('doctorSelect');
+    const docOption = docSelect.options[docSelect.selectedIndex];
+
+    document.getElementById('summaryDept').innerText = deptSelect.value;
+    document.getElementById('summaryDoctor').innerText = docOption.text;
+    document.getElementById('summaryDate').innerText = new Date(date).toLocaleDateString('tr-TR');
+    document.getElementById('summaryTime').innerText = time;
+  }
 </script>
+
 </body>
 </html>

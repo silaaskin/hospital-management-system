@@ -3,38 +3,165 @@
 <head>
   <meta charset="UTF-8">
   <title>Hasta Girişi</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #e9ecef; font-family: sans-serif; }
-    .login-box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.1); width: 300px; text-align: center; }
-    input { width: 100%; padding: 10px; margin: 10px 0 5px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-    button { width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top: 15px; }
-    button:hover { background: #218838; }
-    .error { color: red; margin-top: 10px; font-size: 14px; }
-    .hint { font-size: 12px; color: #666; display: block; margin-bottom: 5px; text-align: left; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .login-wrapper {
+      width: 100%;
+      max-width: 450px;
+    }
+    .login-card {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 15px 45px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    .login-header {
+      background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+      color: white;
+      padding: 40px 30px;
+      text-align: center;
+    }
+    .login-header i {
+      font-size: 3.5rem;
+      margin-bottom: 15px;
+      display: block;
+    }
+    .login-header h3 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+    .login-header p {
+      font-size: 0.95rem;
+      opacity: 0.9;
+    }
+    .login-body {
+      padding: 40px;
+    }
+    input {
+      width: 100%;
+      padding: 12px 15px;
+      margin: 10px 0 5px 0;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 1rem;
+      box-sizing: border-box;
+      transition: all 0.3s;
+    }
+    input:focus {
+      border-color: #047857;
+      box-shadow: 0 0 0 3px rgba(4, 120, 87, 0.1);
+      outline: none;
+    }
+    input::placeholder {
+      color: #9ca3af;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      margin-top: 15px;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(4, 120, 87, 0.3);
+    }
+    .error {
+      color: #dc2626;
+      margin-top: 10px;
+      font-size: 14px;
+      padding: 10px;
+      background: #fee2e2;
+      border-radius: 6px;
+      border-left: 4px solid #dc2626;
+      display: none;
+    }
+    .error.show {
+      display: block;
+    }
+    .hint {
+      font-size: 12px;
+      color: #666;
+      display: block;
+      margin-bottom: 10px;
+      text-align: left;
+      padding: 8px;
+      background: #f0fff4;
+      border-left: 3px solid #10b981;
+      border-radius: 4px;
+    }
+    .back-link {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .back-link a {
+      color: #047857;
+      text-decoration: none;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .back-link a:hover {
+      color: #065f46;
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
-<div class="login-box">
-  <h2>Hasta Girişi</h2>
-  <form id="patForm">
-    <input type="text" id="tcNo" placeholder="TC Kimlik Numaranız" required maxlength="11">
 
-    <input type="password" id="password" placeholder="Şifreniz" required>
-    <span class="hint">ℹ️ Şifreniz: Telefon numaranızın son 4 hanesi + TC'nizin ilk 4 hanesidir.</span>
+<div class="login-wrapper">
+  <div class="login-card">
+    <div class="login-header">
+      <i class="fas fa-user-injured"></i>
+      <h3>Hasta Girişi</h3>
+      <p>Sağlık Yönetim Sistemi</p>
+    </div>
 
-    <button type="submit">Giriş Yap</button>
-  </form>
-  <div id="msg" class="error"></div>
+    <div class="login-body">
+      <form id="patForm">
+        <input type="text" id="tcNo" placeholder="TC Kimlik Numaranız" required maxlength="11">
+        <input type="password" id="password" placeholder="Şifreniz" required>
+        <span class="hint">ℹ️ Şifreniz: Telefon numaranızın son 4 hanesi + TC'nizin ilk 4 hanesidir.</span>
+        <button type="submit"><i class="fas fa-sign-in-alt"></i> Giriş Yap</button>
+      </form>
+      <div id="msg" class="error"></div>
+
+      <div class="back-link">
+        <a href="/"><i class="fas fa-arrow-left"></i> Giriş Seçimine Dön</a>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
   document.getElementById('patForm').addEventListener('submit', function(e) {
     e.preventDefault();
-
     const tcNo = document.getElementById('tcNo').value;
-    const password = document.getElementById('password').value; // Şifreyi alıyoruz
+    const password = document.getElementById('password').value;
 
-    // Sunucuya hem TC hem Şifre gönderiyoruz
     fetch('/patients/api/login', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -44,23 +171,23 @@
       })
     })
             .then(async res => {
-              // Eğer giriş başarılıysa (HTTP 200)
               if (res.ok) {
                 return res.json().then(data => {
                   window.location.href = '/dashboard';
                 });
-              }
-              // Eğer hata varsa (HTTP 401 vs), backend'den gelen mesajı al (Text olarak)
-              else {
+              } else {
                 const errorMsg = await res.text();
                 document.getElementById('msg').innerText = errorMsg || "Giriş başarısız!";
+                document.getElementById('msg').classList.add('show');
               }
             })
             .catch(err => {
               console.error(err);
               document.getElementById('msg').innerText = "Bağlantı hatası oluştu.";
+              document.getElementById('msg').classList.add('show');
             });
   });
 </script>
+
 </body>
 </html>
