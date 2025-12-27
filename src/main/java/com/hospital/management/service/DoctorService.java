@@ -63,7 +63,9 @@ public class DoctorService {
         doctor.setFirstName(doctorDetails.getFirstName());
         doctor.setLastName(doctorDetails.getLastName());
         doctor.setSpecialization(doctorDetails.getSpecialization());
-        doctor.setPhone(doctorDetails.getPhone());
+
+        // phone alanı modelden silindiği için buradaki setPhone satırı kaldırıldı.
+
         doctor.setEmail(doctorDetails.getEmail());
         doctor.setDepartment(doctorDetails.getDepartment());
         doctor.setUsername(doctorDetails.getUsername());

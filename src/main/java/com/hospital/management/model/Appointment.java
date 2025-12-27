@@ -26,14 +26,6 @@ public class Appointment {
     @Column(nullable = false)
     private AppointmentStatus status = AppointmentStatus.SCHEDULED;
 
-    @Column(columnDefinition = "TEXT")
-    private String notes;
-
-    @Column(columnDefinition = "TEXT")
-    private String complaints;
-
-    @Column(columnDefinition = "TEXT")
-    private String diagnosis;
 
     public Appointment() {
     }
@@ -43,6 +35,8 @@ public class Appointment {
         this.doctor = doctor;
         this.appointmentDate = appointmentDate;
     }
+
+    // --- Getter ve Setter Metotları ---
 
     public Long getId() {
         return id;
@@ -82,30 +76,6 @@ public class Appointment {
 
     public void setStatus(AppointmentStatus status) {
         this.status = status;
-    }
-
-    public String getNotes() {
-        return notes;
-    }
-
-    public void setNotes(String notes) {
-        this.notes = notes;
-    }
-
-    public String getComplaints() {
-        return complaints;
-    }
-
-    public void setComplaints(String complaints) {
-        this.complaints = complaints;
-    }
-
-    public String getDiagnosis() {
-        return diagnosis;
-    }
-
-    public void setDiagnosis(String diagnosis) {
-        this.diagnosis = diagnosis;
     }
 
     public enum AppointmentStatus {

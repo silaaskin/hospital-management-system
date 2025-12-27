@@ -2,15 +2,17 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Randevu Listesi</title>
+    <title>Randevu Yönetimi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .appointment-card { transition: all 0.3s; border-radius: 12px; }
-        .appointment-card:hover { box-shadow: 0 8px 15px rgba(0,0,0,0.1) !important; }
-        .badge-scheduled { background-color: #ffc107; color: #000; }
-        .badge-completed { background-color: #198754; }
-        .badge-cancelled { background-color: #dc3545; }
+        .appointment-card { transition: all 0.3s; border-radius: 12px; border: 1px solid #eee; }
+        .appointment-card:hover { transform: translateY(-5px); box-shadow: 0 12px 20px rgba(0,0,0,0.08) !important; }
+        .badge-scheduled { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .badge-completed { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .badge-cancelled { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .nav-pills .nav-link.active { background-color: #0d6efd; border-radius: 8px; }
+        .nav-link { color: #495057; font-weight: 500; }
     </style>
 </head>
 <body class="bg-light">
@@ -19,107 +21,127 @@
     <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
         <h3 class="text-primary fw-bold">
             <i class="fas fa-calendar-check me-2"></i>
-            <span th:text="${pageTitle}">Randevular</span>
+            <span>Randevu Takvimi</span>
         </h3>
         <a href="/dashboard" class="btn btn-outline-secondary btn-sm shadow-sm">
-            <i class="fas fa-arrow-left"></i> Panele Dön
+            <i class="fas fa-arrow-left me-1"></i> Panele Dön
         </a>
     </div>
 
-    <div th:if="${#lists.isEmpty(appointments)}" class="alert alert-info border-0 shadow-sm py-4 text-center">
-        <i class="fas fa-info-circle fa-2x mb-2 d-block"></i>
-        <span>Şu an görüntülenecek bir randevu kaydı bulunmamaktadır.</span>
-    </div>
+    <ul class="nav nav-pills mb-4 shadow-sm p-2 bg-white rounded-3" id="appointmentTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="today-tab" data-bs-toggle="pill" data-bs-target="#today" type="button" role="tab">
+                <i class="fas fa-clock me-1"></i> Bugün
+                <span class="badge bg-primary ms-1" th:text="${#lists.size(todayApps)}">0</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tomorrow-tab" data-bs-toggle="pill" data-bs-target="#tomorrow" type="button" role="tab">
+                <i class="fas fa-calendar-day me-1"></i> Yarın
+                <span class="badge bg-secondary ms-1" th:text="${#lists.size(tomorrowApps)}">0</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="all-tab" data-bs-toggle="pill" data-bs-target="#all" type="button" role="tab">
+                <i class="fas fa-list me-1"></i> Tüm Bekleyenler
+            </button>
+        </li>
+    </ul>
 
-    <div class="row g-4">
-        <div class="col-md-6 col-lg-4" th:each="app : ${appointments}">
-            <div class="card appointment-card shadow-sm h-100 border-0"
-                 th:classappend="${app.status.name() == 'CANCELLED'} ? 'opacity-75' : ''">
+    <div class="tab-content" id="appointmentTabsContent">
 
-                <div class="card-header bg-white border-bottom-0 pt-3 d-flex justify-content-between align-items-center">
-                    <span class="text-muted small fw-bold">
-                        <i class="far fa-clock text-primary me-1"></i>
-                        <span th:text="${#temporals.format(app.appointmentDate, 'dd.MM.yyyy HH:mm')}"></span>
-                    </span>
-                    <span class="badge"
-                          th:classappend="${app.status.name() == 'SCHEDULED' ? 'badge-scheduled' : (app.status.name() == 'COMPLETED' ? 'badge-completed' : 'badge-cancelled')}"
-                          th:text="${app.status.name() == 'SCHEDULED' ? 'Bekliyor' : (app.status.name() == 'COMPLETED' ? 'Tamamlandı' : 'İptal')}">
-                    </span>
+        <div class="tab-pane fade show active" id="today" role="tabpanel">
+            <div class="row g-4" th:if="${not #lists.isEmpty(todayApps)}">
+                <div class="col-md-6 col-lg-4" th:each="app : ${todayApps}">
+                    <div th:replace="~{::appointmentCardFragment(app=${app})}"></div>
                 </div>
+            </div>
+            <div th:if="${#lists.isEmpty(todayApps)}" class="text-center py-5 border rounded bg-white">
+                <p class="text-muted mb-0">Bugün için bekleyen randevu bulunmuyor.</p>
+            </div>
+        </div>
 
-                <div class="card-body">
-                    <div th:if="${session.userType == 'DOCTOR'}">
-                        <h5 class="card-title fw-bold mb-1" th:text="${app.patient.firstName + ' ' + app.patient.lastName}"></h5>
-                        <p class="text-primary small mb-2"><i class="fas fa-id-card me-1"></i> TC: <span th:text="${app.patient.tcNo}"></span></p>
-                    </div>
-
-                    <div th:if="${session.userType == 'PATIENT'}">
-                        <h5 class="card-title fw-bold mb-1" th:text="${'Dr. ' + app.doctor.firstName + ' ' + app.doctor.lastName}"></h5>
-                        <p class="text-info small mb-2"><i class="fas fa-stethoscope me-1"></i> <span th:text="${app.doctor.specialization}"></span></p>
-                    </div>
-
-                    <div class="bg-light p-2 rounded mt-3" th:if="${app.notes}">
-                        <small class="text-muted d-block fw-bold">Randevu Notu:</small>
-                        <span class="small text-dark" th:text="${app.notes}"></span>
-                    </div>
+        <div class="tab-pane fade" id="tomorrow" role="tabpanel">
+            <div class="row g-4" th:if="${not #lists.isEmpty(tomorrowApps)}">
+                <div class="col-md-6 col-lg-4" th:each="app : ${tomorrowApps}">
+                    <div th:replace="~{::appointmentCardFragment(app=${app})}"></div>
                 </div>
+            </div>
+            <div th:if="${#lists.isEmpty(tomorrowApps)}" class="text-center py-5 border rounded bg-white">
+                <p class="text-muted mb-0">Yarın için bekleyen randevu bulunmuyor.</p>
+            </div>
+        </div>
 
-                <div class="card-footer bg-white border-top-0 pb-3" th:if="${session.userType == 'DOCTOR' and app.status.name() == 'SCHEDULED'}">
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-primary btn-sm rounded-pill"
-                                data-bs-toggle="modal"
-                                data-bs-target="#prescriptionModal"
-                                th:onclick="'preparePrescription(' + ${app.id} + ',' + ${app.doctor.id} + ')'">
-                            <i class="fas fa-pen-fancy me-1"></i> Reçete Yaz
-                        </button>
-                        <button class="btn btn-success btn-sm rounded-pill" th:onclick="'completeAppointment(' + ${app.id} + ')'">
-                            <i class="fas fa-check me-1"></i> Muayeneyi Tamamla
-                        </button>
-                    </div>
+        <div class="tab-pane fade" id="all" role="tabpanel">
+            <div class="row g-4" th:if="${not #lists.isEmpty(pendingApps)}">
+                <div class="col-md-6 col-lg-4" th:each="app : ${pendingApps}">
+                    <div th:replace="~{::appointmentCardFragment(app=${app})}"></div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<div th:fragment="appointmentCardFragment(app)" class="card appointment-card shadow-sm h-100 border-0 bg-white">
+    <div class="card-header bg-transparent border-0 pt-3 d-flex justify-content-between align-items-center">
+        <span class="text-dark small fw-bold">
+            <i class="far fa-calendar-alt text-primary me-1"></i>
+            <span th:text="${#temporals.format(app.appointmentDate, 'HH:mm')}"></span>
+        </span>
+        <span class="badge"
+              th:classappend="${app.status.name() == 'SCHEDULED' ? 'badge-scheduled' : (app.status.name() == 'COMPLETED' ? 'badge-completed' : 'badge-cancelled')}"
+              th:text="${app.status.name() == 'SCHEDULED' ? 'Bekliyor' : (app.status.name() == 'COMPLETED' ? 'Tamamlandı' : 'İptal')}">
+        </span>
+    </div>
+    <div class="card-body pt-2">
+        <div th:if="${session.userType == 'DOCTOR'}">
+            <h6 class="text-muted mb-1 small">Hasta Bilgisi</h6>
+            <h5 class="card-title fw-bold mb-1" th:text="${app.patient.firstName + ' ' + app.patient.lastName}"></h5>
+            <p class="text-primary small mb-0"><i class="fas fa-fingerprint me-1"></i> <span th:text="${app.patient.tcNo}"></span></p>
+        </div>
+        <div th:if="${session.userType == 'PATIENT'}">
+            <h6 class="text-muted mb-1 small">Doktor Bilgisi</h6>
+            <h5 class="card-title fw-bold mb-1" th:text="${'Dr. ' + app.doctor.firstName + ' ' + app.doctor.lastName}"></h5>
+            <p class="text-info small mb-0"><i class="fas fa-stethoscope me-1"></i> <span th:text="${app.doctor.specialization}"></span></p>
+        </div>
+    </div>
+    <div class="card-footer bg-transparent border-0 pb-3" th:if="${session.userType == 'DOCTOR' and app.status.name() == 'SCHEDULED'}">
+        <div class="d-grid gap-2">
+            <button class="btn btn-primary btn-sm rounded-3" data-bs-toggle="modal" data-bs-target="#prescriptionModal"
+                    th:onclick="'preparePrescription(' + ${app.id} + ',' + ${app.doctor.id} + ')'">
+                <i class="fas fa-file-medical me-1"></i> Reçete Hazırla
+            </button>
+            <button class="btn btn-success btn-sm rounded-3" th:onclick="'completeAppointment(' + ${app.id} + ')'">
+                <i class="fas fa-check-circle me-1"></i> Muayene Bitti
+            </button>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="prescriptionModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-primary text-white border-0">
-                <h5 class="modal-title fw-bold"><i class="fas fa-pills me-2"></i> Reçete Oluştur</h5>
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white border-0 py-3">
+                <h5 class="modal-title fw-bold"><i class="fas fa-pills me-2"></i> Reçete Detayları</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
                 <form id="prescForm">
                     <input type="hidden" id="p_appointmentId">
                     <input type="hidden" id="p_doctorId">
-
                     <div class="mb-3">
-                        <label class="form-label fw-bold text-primary">İlaç Listesi</label>
-                        <textarea id="p_medications" class="form-control" rows="3" placeholder="Örn: Augmentin 1000mg" required></textarea>
+                        <label class="form-label fw-bold">İlaç(lar)</label>
+                        <textarea id="p_medications" class="form-control rounded-3" rows="3" required></textarea>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Kullanım Şekli</label>
-                        <input type="text" id="p_dosage" class="form-control" placeholder="Örn: 12 Saatte 1, Tok Karna">
+                        <label class="form-label fw-bold">Kullanım Dozu</label>
+                        <input type="text" id="p_dosage" class="form-control rounded-3">
                     </div>
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Tedavi Süresi (Gün)</label>
-                            <input type="number" id="p_duration" class="form-control" value="7">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Ek Talimatlar</label>
-                            <input type="text" id="p_instructions" class="form-control" placeholder="Günde 2 kez">
-                        </div>
+                        <div class="col-6 mb-3"><label class="form-label fw-bold">Süre (Gün)</label><input type="number" id="p_duration" class="form-control rounded-3" value="7"></div>
+                        <div class="col-6 mb-3"><label class="form-label fw-bold">Talimat</label><input type="text" id="p_instructions" class="form-control rounded-3"></div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Doktor Notu</label>
-                        <textarea id="p_notes" class="form-control" rows="2" placeholder="Hastaya özel uyarılar..."></textarea>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm mt-2">
-                        <i class="fas fa-save me-1"></i> Reçeteyi Sisteme Kaydet
-                    </button>
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-3 mt-2 shadow">Reçeteyi Kaydet</button>
                 </form>
             </div>
         </div>
@@ -132,14 +154,12 @@
         document.getElementById('p_appointmentId').value = appId;
         document.getElementById('p_doctorId').value = docId;
     }
-
     function completeAppointment(id) {
-        if(confirm("Bu muayeneyi tamamlandı olarak işaretleyip kapatmak istiyor musunuz?")) {
+        if(confirm("Bu muayeneyi tamamlandı olarak işaretlemek istiyor musunuz?")) {
             fetch('/appointments/api/' + id + '/complete', { method: 'PUT' })
-                .then(res => res.ok ? window.location.reload() : alert("Bir hata oluştu!"));
+                .then(res => res.ok ? window.location.reload() : alert("Hata!"));
         }
     }
-
     document.getElementById('prescForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const data = {
@@ -148,22 +168,13 @@
             medications: document.getElementById('p_medications').value,
             dosage: document.getElementById('p_dosage').value,
             instructions: document.getElementById('p_instructions').value || "",
-            durationDays: document.getElementById('p_duration').value || null,
-            notes: document.getElementById('p_notes').value
+            durationDays: document.getElementById('p_duration').value || null
         };
-
         fetch('/prescriptions/api', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(data)
-        }).then(res => {
-            if(res.ok) {
-                alert("✅ Reçete başarıyla kaydedildi!");
-                window.location.reload();
-            } else {
-                res.text().then(text => alert("❌ Hata: " + text));
-            }
-        });
+        }).then(res => res.ok ? (alert("Başarılı!"), window.location.reload()) : alert("Hata!"));
     });
 </script>
 </body>

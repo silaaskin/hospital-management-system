@@ -63,4 +63,10 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     // YENİ: Doktorun belirli bir zaman aralığındaki (Örn: 30 dk) herhangi bir randevusunu kontrol eder
     List<Appointment> findByDoctorAndAppointmentDateBetween(Doctor doctor, LocalDateTime start, LocalDateTime end);
+
+    // Sadece bekleyen (SCHEDULED) randevuları tarihe göre sıralı getir
+    List<Appointment> findByStatusOrderByAppointmentDateAsc(AppointmentStatus status);
+
+    // Belirli bir tarihteki randevuları getir
+    List<Appointment> findByAppointmentDateBetweenAndStatus(LocalDateTime start, LocalDateTime end, AppointmentStatus status);
 }

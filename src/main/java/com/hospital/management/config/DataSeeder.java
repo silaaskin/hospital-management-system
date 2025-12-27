@@ -25,6 +25,8 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void loadDoctors() {
+        // [Ad, Soyad, Uzmanlık, Departman, Username]
+        // Not: phone alanı hem modelden hem DB'den silindiği için veri setinde yer almıyor.
         String[][] doctorsData = {
                 {"Mehmet", "Öz", "Kardiyoloji", "Kalp Sağlığı", "doktor1"},
                 {"Canan", "Karatay", "Dahiliye", "İç Hastalıkları", "doktor2"},
@@ -42,6 +44,7 @@ public class DataSeeder implements CommandLineRunner {
                 d.setDepartment(data[3]);
                 d.setUsername(data[4]);
                 d.setPassword("1234");
+                // d.setPhone(data[...]); satırı tamamen kaldırıldı, çünkü bu metod artık Doctor.java'da yok.
                 doctorRepository.save(d);
             }
         }

@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Controller
 @RequestMapping("/appointments")
@@ -34,36 +37,30 @@ public class AppointmentController {
         Long userId = (Long) session.getAttribute("userId");
 
         if ("PATIENT".equals(userType)) {
-            // HASTA İSE: Sadece kendi randevularını görsün
             List<Appointment> myAppointments = appointmentService.getAppointmentsByPatient(userId);
             model.addAttribute("appointments", myAppointments);
             model.addAttribute("pageTitle", "Randevularım");
         } else if ("DOCTOR".equals(userType)) {
-            // --- GÜNCELLEME BURADA YAPILDI ---
-            // ESKİSİ: appointmentService.getAllAppointments();
-            // YENİSİ: Sadece giriş yapan doktora ait randevuları getirir.
             List<Appointment> myDoctorAppointments = appointmentService.getAppointmentsByDoctor(userId);
             model.addAttribute("appointments", myDoctorAppointments);
             model.addAttribute("pageTitle", "Randevu Listem");
         } else {
-            return "redirect:/"; // Giriş yapmamışsa ana sayfaya at
+            return "redirect:/";
         }
 
-        return "appointments-list"; // templates/appointments-list.html dosyasını açar
+        return "appointments-list";
     }
 
     // ==========================================
     //          2. API METODLARI (JSON)
     // ==========================================
 
-    // Tüm randevuları listele
     @GetMapping("/api")
     @ResponseBody
     public ResponseEntity<List<Appointment>> getAllAppointments() {
         return ResponseEntity.ok(appointmentService.getAllAppointments());
     }
 
-    // ID'ye göre randevu getir
     @GetMapping("/api/{id}")
     @ResponseBody
     public ResponseEntity<?> getAppointmentById(@PathVariable Long id) {
@@ -75,44 +72,38 @@ public class AppointmentController {
         }
     }
 
-    // Hastaya göre randevuları listele
     @GetMapping("/api/patient/{patientId}")
     @ResponseBody
     public ResponseEntity<?> getAppointmentsByPatient(@PathVariable Long patientId) {
         return ResponseEntity.ok(appointmentService.getAppointmentsByPatient(patientId));
     }
 
-    // Doktora göre randevuları listele
     @GetMapping("/api/doctor/{doctorId}")
     @ResponseBody
     public ResponseEntity<?> getAppointmentsByDoctor(@PathVariable Long doctorId) {
         return ResponseEntity.ok(appointmentService.getAppointmentsByDoctor(doctorId));
     }
 
-    // Duruma göre randevuları listele (ONAYLANDI, İPTAL vb.)
     @GetMapping("/api/status/{status}")
     @ResponseBody
     public ResponseEntity<List<Appointment>> getAppointmentsByStatus(@PathVariable AppointmentStatus status) {
         return ResponseEntity.ok(appointmentService.getAppointmentsByStatus(status));
     }
 
-    // Hastanın GELECEK randevuları
     @GetMapping("/api/patient/{patientId}/upcoming")
     @ResponseBody
     public ResponseEntity<?> getUpcomingAppointmentsByPatient(@PathVariable Long patientId) {
         return ResponseEntity.ok(appointmentService.getUpcomingAppointmentsByPatient(patientId));
     }
 
-    // Tarih aralığına göre randevular
     @GetMapping("/api/date-range")
     @ResponseBody
     public ResponseEntity<List<Appointment>> getAppointmentsByDateRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
-        return ResponseEntity.ok(appointmentService.getAppointmentsByDateRange(start, end));
+        return ResponseEntity.ok(appointmentService.getAppointmentsInDateRange(start, end));
     }
 
-    // Yeni randevu oluştur
     @PostMapping("/api")
     @ResponseBody
     public ResponseEntity<?> createAppointment(@RequestBody Map<String, Object> appointmentData) {
@@ -123,8 +114,7 @@ public class AppointmentController {
 
             Appointment appointment = appointmentService.createAppointment(patientId, doctorId, date);
 
-            if (appointmentData.containsKey("notes")) appointment.setNotes(appointmentData.get("notes").toString());
-            if (appointmentData.containsKey("complaints")) appointment.setComplaints(appointmentData.get("complaints").toString());
+            // 'notes', 'complaints' ve 'diagnosis' alanlarına dair tüm set işlemleri kaldırıldı.
 
             return ResponseEntity.status(HttpStatus.CREATED).body(appointmentService.saveAppointment(appointment));
         } catch (Exception e) {
@@ -132,7 +122,7 @@ public class AppointmentController {
         }
     }
 
-    // Randevu GÜNCELLE
+
     @PutMapping("/api/{id}")
     @ResponseBody
     public ResponseEntity<?> updateAppointment(@PathVariable Long id, @RequestBody Appointment appointment) {
@@ -143,7 +133,6 @@ public class AppointmentController {
         }
     }
 
-    // Randevu İPTAL ET
     @PutMapping("/api/{id}/cancel")
     @ResponseBody
     public ResponseEntity<?> cancelAppointment(@PathVariable Long id) {
@@ -154,7 +143,6 @@ public class AppointmentController {
         }
     }
 
-    // Randevu TAMAMLA
     @PutMapping("/api/{id}/complete")
     @ResponseBody
     public ResponseEntity<?> completeAppointment(@PathVariable Long id) {
@@ -165,7 +153,6 @@ public class AppointmentController {
         }
     }
 
-    // Randevu SİL
     @DeleteMapping("/api/{id}")
     @ResponseBody
     public ResponseEntity<?> deleteAppointment(@PathVariable Long id) {
@@ -176,4 +163,27 @@ public class AppointmentController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
+    @GetMapping("/list")
+    public String showAppointments(Model model) {
+        LocalDateTime now = LocalDateTime.now();
+
+        // Bugünün sonu (23:59:59)
+        LocalDateTime todayEnd = LocalDate.now().atTime(LocalTime.MAX);
+
+        // Yarının başlangıcı ve bitişi
+        LocalDateTime tomorrowStart = LocalDate.now().plusDays(1).atStartOfDay();
+        LocalDateTime tomorrowEnd = LocalDate.now().plusDays(1).atTime(LocalTime.MAX);
+
+        // 1. Bugünün randevuları (Şu andan gün sonuna kadar olanlar)
+        model.addAttribute("todayApps", appointmentService.getAppointmentsInDateRange(now, todayEnd));
+
+        // 2. Yarının randevuları (Tüm gün)
+        model.addAttribute("tomorrowApps", appointmentService.getAppointmentsInDateRange(tomorrowStart, tomorrowEnd));
+
+        // 3. Bekleyen (Gelecekteki tüm) randevular
+        model.addAttribute("pendingApps", appointmentService.getAppointmentsByStatus(AppointmentStatus.SCHEDULED));
+
+        return "appointments-list";
+    }
+
 }
