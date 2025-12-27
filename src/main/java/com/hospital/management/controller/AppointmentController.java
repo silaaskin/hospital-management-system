@@ -12,12 +12,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/appointments")
@@ -28,80 +29,89 @@ public class AppointmentController {
     private AppointmentService appointmentService;
 
     // ==========================================
-    //          1. AKILLI GÖRÜNÜM (VIEW)
+    //          1. GÖRÜNÜM METOTLARI (VIEW)
     // ==========================================
 
     @GetMapping("/view")
-    public String showAppointments(Model model, HttpSession session) {
-        String userType = (String) session.getAttribute("userType");
+    public String showUserAppointments(Model model, HttpSession session) {
         Long userId = (Long) session.getAttribute("userId");
+        String userType = (String) session.getAttribute("userType");
 
+        if (userId == null) return "redirect:/login";
+
+        List<Appointment> allUserApps;
         if ("PATIENT".equals(userType)) {
-            List<Appointment> myAppointments = appointmentService.getAppointmentsByPatient(userId);
-            model.addAttribute("appointments", myAppointments);
+            allUserApps = appointmentService.getAppointmentsByPatient(userId);
             model.addAttribute("pageTitle", "Randevularım");
         } else if ("DOCTOR".equals(userType)) {
-            List<Appointment> myDoctorAppointments = appointmentService.getAppointmentsByDoctor(userId);
-            model.addAttribute("appointments", myDoctorAppointments);
+            allUserApps = appointmentService.getAppointmentsByDoctor(userId);
             model.addAttribute("pageTitle", "Randevu Listem");
         } else {
             return "redirect:/";
         }
 
+        prepareAppointmentLists(model, allUserApps);
         return "appointments-list";
     }
 
+    @GetMapping("/list")
+    public String showAllAppointments(Model model) {
+        List<Appointment> allApps = appointmentService.getAllAppointments();
+        model.addAttribute("pageTitle", "Tüm Randevular");
+        prepareAppointmentLists(model, allApps);
+        return "appointments-list";
+    }
+
+    private void prepareAppointmentLists(Model model, List<Appointment> sourceList) {
+        if (sourceList == null) sourceList = new ArrayList<>();
+
+        // Tarihi null olanları koruma amaçlı filtrele
+        List<Appointment> validApps = sourceList.stream()
+                .filter(a -> a.getAppointmentDate() != null)
+                .collect(Collectors.toList());
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime todayEnd = LocalDate.now().atTime(LocalTime.MAX);
+        LocalDateTime tomorrowStart = LocalDate.now().plusDays(1).atStartOfDay();
+        LocalDateTime tomorrowEnd = LocalDate.now().plusDays(1).atTime(LocalTime.MAX);
+
+        // BUGÜN (Sadece bekleyenler)
+        model.addAttribute("todayApps", validApps.stream()
+                .filter(a -> a.getAppointmentDate().isAfter(now.minusMinutes(1)) && a.getAppointmentDate().isBefore(todayEnd))
+                .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED)
+                .collect(Collectors.toList()));
+
+        // YARIN (Sadece bekleyenler)
+        model.addAttribute("tomorrowApps", validApps.stream()
+                .filter(a -> a.getAppointmentDate().isAfter(tomorrowStart) && a.getAppointmentDate().isBefore(tomorrowEnd))
+                .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED)
+                .collect(Collectors.toList()));
+
+        // TÜM BEKLEYENLER
+        model.addAttribute("pendingApps", validApps.stream()
+                .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED)
+                .collect(Collectors.toList()));
+
+        // TAMAMLANANLAR (Geçmiş Randevular) - YENİ FİLTRE
+        model.addAttribute("completedApps", validApps.stream()
+                .filter(a -> a.getStatus() == AppointmentStatus.COMPLETED)
+                .collect(Collectors.toList()));
+
+        // İPTAL EDİLENLER - YENİ FİLTRE
+        model.addAttribute("cancelledApps", validApps.stream()
+                .filter(a -> a.getStatus() == AppointmentStatus.CANCELLED)
+                .collect(Collectors.toList()));
+
+        model.addAttribute("appointments", validApps);
+    }
     // ==========================================
     //          2. API METODLARI (JSON)
     // ==========================================
 
     @GetMapping("/api")
     @ResponseBody
-    public ResponseEntity<List<Appointment>> getAllAppointments() {
+    public ResponseEntity<List<Appointment>> getAllAppointmentsApi() {
         return ResponseEntity.ok(appointmentService.getAllAppointments());
-    }
-
-    @GetMapping("/api/{id}")
-    @ResponseBody
-    public ResponseEntity<?> getAppointmentById(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(appointmentService.getAppointmentById(id)
-                    .orElseThrow(() -> new RuntimeException("Randevu bulunamadı")));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/api/patient/{patientId}")
-    @ResponseBody
-    public ResponseEntity<?> getAppointmentsByPatient(@PathVariable Long patientId) {
-        return ResponseEntity.ok(appointmentService.getAppointmentsByPatient(patientId));
-    }
-
-    @GetMapping("/api/doctor/{doctorId}")
-    @ResponseBody
-    public ResponseEntity<?> getAppointmentsByDoctor(@PathVariable Long doctorId) {
-        return ResponseEntity.ok(appointmentService.getAppointmentsByDoctor(doctorId));
-    }
-
-    @GetMapping("/api/status/{status}")
-    @ResponseBody
-    public ResponseEntity<List<Appointment>> getAppointmentsByStatus(@PathVariable AppointmentStatus status) {
-        return ResponseEntity.ok(appointmentService.getAppointmentsByStatus(status));
-    }
-
-    @GetMapping("/api/patient/{patientId}/upcoming")
-    @ResponseBody
-    public ResponseEntity<?> getUpcomingAppointmentsByPatient(@PathVariable Long patientId) {
-        return ResponseEntity.ok(appointmentService.getUpcomingAppointmentsByPatient(patientId));
-    }
-
-    @GetMapping("/api/date-range")
-    @ResponseBody
-    public ResponseEntity<List<Appointment>> getAppointmentsByDateRange(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
-        return ResponseEntity.ok(appointmentService.getAppointmentsInDateRange(start, end));
     }
 
     @PostMapping("/api")
@@ -111,33 +121,8 @@ public class AppointmentController {
             Long patientId = Long.valueOf(appointmentData.get("patientId").toString());
             Long doctorId = Long.valueOf(appointmentData.get("doctorId").toString());
             LocalDateTime date = LocalDateTime.parse(appointmentData.get("appointmentDate").toString());
-
             Appointment appointment = appointmentService.createAppointment(patientId, doctorId, date);
-
-            // 'notes', 'complaints' ve 'diagnosis' alanlarına dair tüm set işlemleri kaldırıldı.
-
             return ResponseEntity.status(HttpStatus.CREATED).body(appointmentService.saveAppointment(appointment));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
-    }
-
-
-    @PutMapping("/api/{id}")
-    @ResponseBody
-    public ResponseEntity<?> updateAppointment(@PathVariable Long id, @RequestBody Appointment appointment) {
-        try {
-            return ResponseEntity.ok(appointmentService.updateAppointment(id, appointment));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
-    }
-
-    @PutMapping("/api/{id}/cancel")
-    @ResponseBody
-    public ResponseEntity<?> cancelAppointment(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(appointmentService.cancelAppointment(id));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
@@ -163,27 +148,4 @@ public class AppointmentController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
-    @GetMapping("/list")
-    public String showAppointments(Model model) {
-        LocalDateTime now = LocalDateTime.now();
-
-        // Bugünün sonu (23:59:59)
-        LocalDateTime todayEnd = LocalDate.now().atTime(LocalTime.MAX);
-
-        // Yarının başlangıcı ve bitişi
-        LocalDateTime tomorrowStart = LocalDate.now().plusDays(1).atStartOfDay();
-        LocalDateTime tomorrowEnd = LocalDate.now().plusDays(1).atTime(LocalTime.MAX);
-
-        // 1. Bugünün randevuları (Şu andan gün sonuna kadar olanlar)
-        model.addAttribute("todayApps", appointmentService.getAppointmentsInDateRange(now, todayEnd));
-
-        // 2. Yarının randevuları (Tüm gün)
-        model.addAttribute("tomorrowApps", appointmentService.getAppointmentsInDateRange(tomorrowStart, tomorrowEnd));
-
-        // 3. Bekleyen (Gelecekteki tüm) randevular
-        model.addAttribute("pendingApps", appointmentService.getAppointmentsByStatus(AppointmentStatus.SCHEDULED));
-
-        return "appointments-list";
-    }
-
 }
