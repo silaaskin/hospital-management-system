@@ -2,126 +2,143 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
-  <title>Randevu Oluştur</title>
+  <title>Randevu Planla - MHRS Yapısı</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/material_blue.css">
   <style>
-    .card { border-radius: 15px; overflow: hidden; }
-    .card-header { padding: 20px; }
-    .form-select-lg, .flatpickr-input { border-radius: 10px; }
-    /* Flatpickr'ın oluşturduğu ikincil inputun tasarımı için */
-    .form-control.input { background-color: white !important; }
+    .slot-btn { width: 90px; margin: 4px; font-weight: bold; }
+    .day-btn { min-width: 140px; margin-right: 10px; border-radius: 12px; }
+    .selected-item { background-color: #0d6efd !important; color: white !important; }
+    .days-scroll { display: flex; overflow-x: auto; padding-bottom: 10px; scroll-behavior: smooth; }
   </style>
 </head>
 <body class="bg-light">
 
-<div class="container mt-5 mb-5">
-  <div class="row justify-content-center">
-    <div class="col-md-8">
-      <div class="card shadow-lg border-0">
-        <div class="card-header bg-primary text-white text-center">
-          <h4 class="mb-0"><i class="fas fa-calendar-plus me-2"></i> Yeni Randevu Planla</h4>
+<div class="container mt-5">
+  <div class="card shadow-lg border-0">
+    <div class="card-header bg-primary text-white text-center py-3">
+      <h4 class="mb-0"><i class="fas fa-hospital-user me-2"></i> Akıllı Randevu Sistemi</h4>
+    </div>
+    <div class="card-body p-4">
+      <form action="/patients/appointments/book" method="post">
+
+        <div class="mb-4">
+          <label class="form-label fw-bold"><i class="fas fa-stethoscope text-primary"></i> 1. Poliklinik Seçiniz</label>
+          <select id="departmentSelect" class="form-select form-select-lg" onchange="filterDoctorsByDept()" required>
+            <option value="" selected disabled>-- Branş Seçiniz --</option>
+            <option th:each="dept : ${departments}" th:value="${dept}" th:text="${dept}"></option>
+          </select>
         </div>
-        <div class="card-body p-4 p-lg-5 bg-white">
 
-          <form action="/patients/appointments/book" method="post">
-
-            <div class="mb-4" th:if="${session.userType == 'SECRETARY'}">
-              <label class="form-label fw-bold text-secondary">Randevu Alınacak Hasta</label>
-              <select name="patientId" class="form-select form-select-lg shadow-sm" required>
-                <option value="" selected disabled>-- Hasta Seçiniz --</option>
-                <option th:each="p : ${allPatients}"
-                        th:value="${p.id}"
-                        th:text="${p.tcNo + ' - ' + p.firstName + ' ' + p.lastName}"></option>
-              </select>
-            </div>
-
-            <div class="row mb-4">
-              <div class="col-md-6 mb-3 mb-md-0">
-                <label class="form-label fw-bold text-secondary">Poliklinik / Bölüm</label>
-                <select id="departmentSelect" class="form-select shadow-sm" onchange="filterDoctors()" required>
-                  <option value="" selected disabled>-- Bölüm Seçin --</option>
-                  <option th:each="dept : ${departments}" th:value="${dept}" th:text="${dept}"></option>
-                </select>
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label fw-bold text-secondary">Doktor</label>
-                <select name="doctorId" id="doctorSelect" class="form-select shadow-sm" disabled required>
-                  <option value="" selected disabled>-- Önce Bölüm Seçiniz --</option>
-                  <option th:each="doc : ${doctors}"
-                          th:value="${doc.id}"
-                          th:data-dept="${doc.specialization}"
-                          th:text="${'Dr. ' + doc.firstName + ' ' + doc.lastName}"></option>
-                </select>
-              </div>
-            </div>
-
-            <div class="mb-4">
-              <label class="form-label fw-bold text-secondary">Randevu Tarihi ve Saati</label>
-              <div class="input-group shadow-sm">
-                <span class="input-group-text bg-white"><i class="fas fa-clock text-primary"></i></span>
-                <input type="text" id="smartDatePicker" name="appointmentDate"
-                       class="form-control bg-white" placeholder="Tarih seçmek için tıklayın..." required>
-              </div>
-              <div class="form-text mt-2 text-muted">
-                <i class="fas fa-info-circle me-1"></i> 09:00 - 17:00 arası 30 dakikalık dilimler seçilebilir.
-              </div>
-            </div>
-
-            <hr class="my-4">
-
-            <div class="d-grid gap-2">
-              <button type="submit" class="btn btn-success btn-lg shadow">
-                <i class="fas fa-check-circle me-2"></i> Randevuyu Onayla ve Kaydet
-              </button>
-              <a href="/dashboard" class="btn btn-link text-secondary text-decoration-none">Vazgeç ve Geri Dön</a>
-            </div>
-          </form>
-
+        <div id="doctorArea" class="mb-4 d-none">
+          <label class="form-label fw-bold"><i class="fas fa-user-md text-primary"></i> 2. Doktor Seçiniz</label>
+          <select name="doctorId" id="doctorSelect" class="form-select form-select-lg" onchange="showDays()" required>
+            <option value="" selected disabled>-- Önce Branş Seçiniz --</option>
+            <option th:each="doc : ${doctors}"
+                    th:value="${doc.id}"
+                    th:data-dept="${doc.specialization}"
+                    th:text="${'Dr. ' + doc.firstName + ' ' + doc.lastName}"></option>
+          </select>
         </div>
-      </div>
+
+        <div id="dayArea" class="mb-4 d-none">
+          <label class="form-label fw-bold"><i class="fas fa-calendar-day text-primary"></i> 3. Tarih Seçiniz</label>
+          <div id="daysList" class="days-scroll"></div>
+          <input type="hidden" id="selectedDate">
+        </div>
+
+        <div id="timeArea" class="mb-4 d-none">
+          <label class="form-label fw-bold"><i class="fas fa-clock text-primary"></i> 4. Saat Dilimi Seçiniz</label>
+          <div id="slotsContainer" class="d-flex flex-wrap border p-3 rounded bg-white"></div>
+          <input type="hidden" id="finalDateTime" name="appointmentDate" required>
+        </div>
+
+        <div class="d-grid gap-2 mt-4">
+          <button type="submit" id="submitBtn" class="btn btn-success btn-lg shadow" disabled>
+            <i class="fas fa-check-circle me-2"></i> Randevuyu Tamamla
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/tr.js"></script>
-
 <script>
-  function filterDoctors() {
-    const selectedDept = document.getElementById("departmentSelect").value;
-    const doctorSelect = document.getElementById("doctorSelect");
-    const options = doctorSelect.getElementsByTagName("option");
-    doctorSelect.disabled = false;
-    doctorSelect.value = "";
-    for (let i = 0; i < options.length; i++) {
-      const option = options[i];
-      const doctorDept = option.getAttribute("data-dept");
-      if (!doctorDept) continue;
-      option.style.display = (doctorDept === selectedDept) ? "block" : "none";
+  const timeSlots = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30"];
+
+  function filterDoctorsByDept() {
+    const dept = document.getElementById('departmentSelect').value;
+    const docSelect = document.getElementById('doctorSelect');
+    const options = docSelect.getElementsByTagName('option');
+
+    document.getElementById('doctorArea').classList.remove('d-none');
+    docSelect.value = "";
+    document.getElementById('dayArea').classList.add('d-none');
+    document.getElementById('timeArea').classList.add('d-none');
+
+    for (let opt of options) {
+      if (!opt.getAttribute('data-dept')) continue;
+      opt.style.display = (opt.getAttribute('data-dept') === dept) ? "block" : "none";
     }
   }
 
-  document.addEventListener('DOMContentLoaded', function() {
-    flatpickr("#smartDatePicker", {
-      enableTime: true,
-      // 'T' harfi Java'nın LocalDateTime parse hatasını çözer
-      dateFormat: "Y-m-dTH:i",
-      // altInput: Kullanıcının ekranda daha düzgün bir format görmesini sağlar
-      altInput: true,
-      altFormat: "d.m.Y H:i",
-      minDate: "today",
-      time_24hr: true,
-      locale: "tr",
-      minuteIncrement: 30,
-      minTime: "09:00",
-      maxTime: "17:00"
-    });
-  });
-</script>
+  function showDays() {
+    const daysList = document.getElementById('daysList');
+    daysList.innerHTML = '';
+    document.getElementById('dayArea').classList.remove('d-none');
+    document.getElementById('timeArea').classList.add('d-none');
 
+    for (let i = 1; i <= 7; i++) {
+      let d = new Date();
+      d.setDate(d.getDate() + i);
+      let dateStr = d.toISOString().split('T')[0];
+
+      let btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-outline-primary day-btn p-3';
+      btn.innerHTML = `<strong>${d.toLocaleDateString('tr-TR', {weekday: 'long'})}</strong><br>${dateStr}`;
+      btn.onclick = () => selectDay(dateStr, btn);
+      daysList.appendChild(btn);
+    }
+  }
+
+  function selectDay(date, btn) {
+    document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('selected-item'));
+    btn.classList.add('selected-item');
+    document.getElementById('selectedDate').value = date;
+
+    const docId = document.getElementById('doctorSelect').value;
+
+    fetch(`/appointments/api/busy-slots?doctorId=${docId}&date=${date}`)
+            .then(res => res.json())
+            .then(busySlots => {
+              renderTimeSlots(busySlots, date);
+            });
+  }
+
+  function renderTimeSlots(busySlots, date) {
+    const container = document.getElementById('slotsContainer');
+    container.innerHTML = '';
+    document.getElementById('timeArea').classList.remove('d-none');
+
+    timeSlots.forEach(s => {
+      const isBusy = busySlots.some(b => b.startsWith(s));
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `btn slot-btn ${isBusy ? 'btn-danger disabled' : 'btn-outline-success'}`;
+      btn.innerText = s;
+
+      if (!isBusy) {
+        btn.onclick = () => {
+          document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected-item'));
+          btn.classList.add('selected-item');
+          document.getElementById('finalDateTime').value = date + 'T' + s;
+          document.getElementById('submitBtn').disabled = false;
+        };
+      }
+      container.appendChild(btn);
+    });
+  }
+</script>
 </body>
 </html>
