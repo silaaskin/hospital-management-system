@@ -21,7 +21,6 @@ public class TriageService {
     public List<TriageRecord> getAllTriageRecords() { return triageRecordRepository.findAll(); }
     public Optional<TriageRecord> getTriageRecordById(Long id) { return triageRecordRepository.findById(id); }
 
-    // HATA ALDIĞINIZ METOD BURAYA EKLENDİ
     public List<TriageRecord> getTriageRecordsByPatient(Long patientId) {
         Patient patient = patientService.getPatientById(patientId)
                 .orElseThrow(() -> new RuntimeException("Hasta bulunamadı!"));

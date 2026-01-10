@@ -114,6 +114,7 @@
   </div>
 </div>
 
+<!-- Triaj Reçete Modal -->
 <div class="modal fade" id="triagePrescriptionModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content bg-dark text-white shadow-lg">
@@ -125,15 +126,23 @@
         <form id="triagePrescForm">
           <input type="hidden" id="tp_triageId">
           <input type="hidden" id="tp_doctorId">
+
           <div class="mb-3">
-            <label class="form-label">İlaçlar</label>
-            <textarea id="tp_medications" class="form-control bg-secondary text-white border-0" rows="3" required placeholder="Örn: Parol (2x1)"></textarea>
+            <label class="form-label">İlaçlar *</label>
+            <textarea id="tp_medications" class="form-control bg-secondary text-white border-0" rows="3" required placeholder="Örn: Parol (2x1), Augmentin (3x1)"></textarea>
           </div>
+
           <div class="mb-3">
-            <label class="form-label">Notlar</label>
+            <label class="form-label">Notlar (Opsiyonel)</label>
             <input type="text" id="tp_notes" class="form-control bg-secondary text-white border-0" placeholder="Eczacıya veya hastaya not...">
           </div>
-          <button type="submit" class="btn btn-info w-100">Reçeteyi Kaydet</button>
+
+          <!-- HATA MESAJI ALANI -->
+          <div id="triageErrorMsg" class="alert alert-danger d-none"></div>
+
+          <button type="submit" class="btn btn-info w-100">
+            <i class="fas fa-save"></i> Reçeteyi Kaydet
+          </button>
         </form>
       </div>
     </div>
@@ -143,48 +152,110 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
   function prepareTriagePrescription(triageId, docId) {
+    console.log('=== MODAL AÇILIYOR ===');
+    console.log('Triaj ID:', triageId);
+    console.log('Doktor ID:', docId);
+
     document.getElementById('tp_triageId').value = triageId;
     document.getElementById('tp_doctorId').value = docId;
+    document.getElementById('tp_medications').value = '';
+    document.getElementById('tp_notes').value = '';
+    document.getElementById('triageErrorMsg').classList.add('d-none');
+
+    console.log('Modal hazır. Form elementleri:');
+    console.log('  tp_triageId:', document.getElementById('tp_triageId').value);
+    console.log('  tp_doctorId:', document.getElementById('tp_doctorId').value);
   }
 
   document.getElementById('triagePrescForm').addEventListener('submit', function(e) {
     e.preventDefault();
+
+    console.log('=== FORM GÖNDERİLİYOR ===');
+
+    const triageId = document.getElementById('tp_triageId').value;
+    const doctorId = document.getElementById('tp_doctorId').value;
+    const medications = document.getElementById('tp_medications').value;
+    const notes = document.getElementById('tp_notes').value;
+
+    console.log('Form verileri:');
+    console.log('  triageId:', triageId);
+    console.log('  doctorId:', doctorId);
+    console.log('  medications:', medications);
+    console.log('  notes:', notes);
+
+    if (!medications || medications.trim() === '') {
+      const errorDiv = document.getElementById('triageErrorMsg');
+      errorDiv.textContent = 'Lütfen ilaç bilgilerini girin!';
+      errorDiv.classList.remove('d-none');
+      return;
+    }
+
     const data = {
-      triageId: document.getElementById('tp_triageId').value,
-      doctorId: document.getElementById('tp_doctorId').value,
-      medications: document.getElementById('tp_medications').value,
-      notes: document.getElementById('tp_notes').value
+      triageId: parseInt(triageId),
+      doctorId: parseInt(doctorId),
+      medications: medications,
+      notes: notes
     };
+
+    console.log('Gönderilecek JSON:', JSON.stringify(data, null, 2));
 
     fetch('/prescriptions/api/triage', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(data)
-    }).then(res => {
-      if(res.ok) {
+    })
+    .then(async response => {
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+
+      const text = await response.text();
+      console.log('Response text:', text);
+
+      let jsonData;
+      try {
+        jsonData = JSON.parse(text);
+      } catch (e) {
+        throw new Error('Sunucu geçersiz JSON döndürdü: ' + text);
+      }
+
+      if (response.ok) {
+        console.log('✅ Başarılı!', jsonData);
         alert("✅ Reçete başarıyla kaydedildi!");
         bootstrap.Modal.getInstance(document.getElementById('triagePrescriptionModal')).hide();
-        window.location.reload(); // Muayene otomatik TREATED olduğu için listeyi yenile
+        window.location.reload();
       } else {
-        alert("❌ Hata oluştu.");
+        throw new Error(jsonData.error || jsonData.message || 'Bilinmeyen hata');
       }
+    })
+    .catch(err => {
+      console.error('❌ HATA:', err);
+      const errorDiv = document.getElementById('triageErrorMsg');
+      errorDiv.textContent = '❌ Hata: ' + err.message;
+      errorDiv.classList.remove('d-none');
     });
   });
 
   function completeTriage(id) {
     if(confirm("Bu hastanın muayenesini tamamlandı olarak işaretlemek istiyor musunuz?")) {
+      console.log('Triaj tamamlanıyor:', id);
+
       fetch('/triage/api/' + id + '/complete', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
       })
-              .then(res => {
-                if(res.ok) {
-                  alert("Muayene başarıyla tamamlandı.");
-                  window.location.reload();
-                } else {
-                  alert("Hata oluştu!");
-                }
-              });
+      .then(res => {
+        console.log('Response status:', res.status);
+        if(res.ok) {
+          alert("✅ Muayene başarıyla tamamlandı.");
+          window.location.reload();
+        } else {
+          throw new Error('HTTP ' + res.status);
+        }
+      })
+      .catch(err => {
+        console.error('Hata:', err);
+        alert("❌ Hata oluştu: " + err.message);
+      });
     }
   }
 </script>

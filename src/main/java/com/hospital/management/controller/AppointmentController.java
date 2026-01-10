@@ -56,7 +56,6 @@ public class AppointmentController {
         return "appointments-list";
     }
 
-    // Doktor için randevuları kategorilendirilmiş şekilde döndür
     @GetMapping("/api/doctor-appointments")
     @ResponseBody
     public ResponseEntity<?> getDoctorAppointments(HttpSession session) {
@@ -121,16 +120,18 @@ public class AppointmentController {
             appointment.setStatus(AppointmentStatus.COMPLETED);
             appointmentRepository.save(appointment);
 
-            return ResponseEntity.ok(appointment);
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("message", "Muayene tamamlandı");
+
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new HashMap<String, String>() {{
-                        put("error", e.getMessage());
-                    }});
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
-    // Reçeteyi kaydet (muayene tamamlanmış olabilir veya olmayabilir)
+    // Reçeteyi kaydet VE muayeneyi tamamla
     @PostMapping("/api/save-prescription")
     @ResponseBody
     public ResponseEntity<?> savePrescription(@RequestBody Map<String, Object> data) {
@@ -152,18 +153,21 @@ public class AppointmentController {
                 prescriptionService.savePrescription(prescription);
             }
 
-            return ResponseEntity.ok(new HashMap<String, String>() {{
-                put("message", "Reçete başarıyla kaydedildi");
-            }});
+            // Muayeneyi otomatik olarak tamamla
+            appointment.setStatus(AppointmentStatus.COMPLETED);
+            appointmentRepository.save(appointment);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("message", "Reçete kaydedildi ve muayene tamamlandı");
+
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new HashMap<String, String>() {{
-                        put("error", e.getMessage());
-                    }});
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
-    // MHRS tarzı saat doluluk kontrolü
     @GetMapping("/api/busy-slots")
     @ResponseBody
     public List<String> getBusySlots(@RequestParam Long doctorId, @RequestParam String date) {
@@ -194,7 +198,6 @@ public class AppointmentController {
         }
     }
 
-    // DTO dönüştürme helper metodu
     private Map<String, Object> convertToAppointmentDTO(Appointment app) {
         Map<String, Object> dto = new HashMap<>();
         dto.put("id", app.getId());

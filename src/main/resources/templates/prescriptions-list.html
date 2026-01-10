@@ -27,27 +27,26 @@
 
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
           <span class="badge bg-primary">Reçete #<span th:text="${item.id}"></span></span>
-          <small class="text-muted" th:text="${item.prescriptionDate}"></small>
+          <small class="text-muted" th:text="${#temporals.format(item.createdDate, 'dd.MM.yyyy HH:mm')}"></small>
         </div>
 
         <div class="card-body">
           <h5 class="card-title text-dark mb-3">
             <span th:if="${session.userType == 'PATIENT'}">
-                <i class="fas fa-user-md text-primary"></i>
-                Dr. <span th:text="${item.doctor.firstName + ' ' + item.doctor.lastName}"></span>
+              <i class="fas fa-user-md text-primary"></i>
+              Dr. <span th:text="${item.doctor.firstName + ' ' + item.doctor.lastName}"></span>
             </span>
-
             <span th:if="${session.userType == 'DOCTOR'}">
-                <i class="fas fa-user-injured text-info"></i>
-                Hasta: <span th:text="${item.patient.firstName + ' ' + item.patient.lastName}"></span>
+              <i class="fas fa-user-injured text-info"></i>
+              Hasta: <span th:text="${item.patient.firstName + ' ' + item.patient.lastName}"></span>
             </span>
           </h5>
 
           <hr>
 
           <p class="mb-2">
-            <strong><i class="fas fa-capsules text-success"></i> İlaçlar:</strong><br>
-            <span th:text="${item.medications}" class="fs-5"></span>
+            <strong><i class="fas fa-capsules text-success"></i> Reçete İçeriği:</strong><br>
+            <span th:text="${item.prescriptionText}" class="fs-6"></span>
           </p>
 
           <p class="mb-2" th:if="${item.dosage}">
@@ -60,11 +59,15 @@
             <span class="fst-italic text-muted" th:text="${item.instructions}"></span>
           </p>
 
+          <p class="mb-2" th:if="${item.durationDays}">
+            <strong><i class="fas fa-calendar-check"></i> Süre:</strong>
+            <span th:text="${item.durationDays + ' gün'}"></span>
+          </p>
+
           <div class="alert alert-light mt-3 border p-2 small" th:if="${item.notes}">
             <strong><i class="fas fa-sticky-note"></i> Doktor Notu:</strong>
             <span th:text="${item.notes}"></span>
           </div>
-
         </div>
       </div>
     </div>

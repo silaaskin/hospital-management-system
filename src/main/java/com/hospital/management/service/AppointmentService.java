@@ -7,12 +7,14 @@ import com.hospital.management.model.Patient;
 import com.hospital.management.repository.AppointmentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class AppointmentService {
 
     @Autowired
@@ -33,24 +35,48 @@ public class AppointmentService {
     }
 
     public List<Appointment> getAppointmentsByPatient(Long patientId) {
+        System.out.println("=== HASTA RANDEVULARI ÇEKİLİYOR ===");
+        System.out.println("Patient ID: " + patientId);
+
         Patient patient = patientService.getPatientById(patientId)
                 .orElseThrow(() -> new RuntimeException("Hasta bulunamadı! ID: " + patientId));
-        return appointmentRepository.findByPatient(patient);
+
+        System.out.println("Hasta bulundu: " + patient.getFirstName() + " " + patient.getLastName() + " (TC: " + patient.getTcNo() + ")");
+
+        List<Appointment> appointments = appointmentRepository.findByPatient(patient);
+        System.out.println("Toplam randevu sayısı: " + appointments.size());
+
+        // Her randevuyu logla
+        for (Appointment a : appointments) {
+            System.out.println("  - ID: " + a.getId() +
+                    ", Tarih: " + a.getAppointmentDate() +
+                    ", Durum: " + a.getStatus() +
+                    ", Doktor: " + a.getDoctor().getFirstName());
+        }
+
+        return appointments;
     }
 
     public List<Appointment> getAppointmentsByDoctor(Long doctorId) {
+        System.out.println("=== DOKTOR RANDEVULARI ÇEKİLİYOR ===");
+        System.out.println("Doctor ID: " + doctorId);
+
         Doctor doctor = doctorService.getDoctorById(doctorId)
                 .orElseThrow(() -> new RuntimeException("Doktor bulunamadı! ID: " + doctorId));
-        return appointmentRepository.findByDoctor(doctor);
+
+        System.out.println("Doktor bulundu: Dr. " + doctor.getFirstName() + " " + doctor.getLastName());
+
+        List<Appointment> appointments = appointmentRepository.findByDoctor(doctor);
+        System.out.println("Toplam randevu sayısı: " + appointments.size());
+
+        return appointments;
     }
 
     public List<Appointment> getAppointmentsByStatus(AppointmentStatus status) {
         return appointmentRepository.findByStatus(status);
     }
 
-    // --- Bugün/Yarın Filtreleme İçin Kullanılan Metot ---
     public List<Appointment> getAppointmentsInDateRange(LocalDateTime start, LocalDateTime end) {
-        // Sadece bekleyen (SCHEDULED) randevuları getirir
         return appointmentRepository.findByAppointmentDateBetweenAndStatus(start, end, AppointmentStatus.SCHEDULED);
     }
 
@@ -60,8 +86,13 @@ public class AppointmentService {
         return appointmentRepository.findUpcomingAppointmentsByPatient(patient, LocalDateTime.now());
     }
 
-    // Randevu Oluşturma ve Çakışma Kontrolü
+    // DÜZELTİLDİ: Çakışma Kontrolü İyileştirildi
     public Appointment createAppointment(Long patientId, Long doctorId, LocalDateTime appointmentDate) {
+        System.out.println("=== YENİ RANDEVU OLUŞTURULUYOR ===");
+        System.out.println("Patient ID: " + patientId);
+        System.out.println("Doctor ID: " + doctorId);
+        System.out.println("Tarih: " + appointmentDate);
+
         if (appointmentDate.isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Geçmiş tarih için randevu oluşturamazsınız!");
         }
@@ -69,23 +100,43 @@ public class AppointmentService {
         Doctor doctor = doctorService.getDoctorById(doctorId)
                 .orElseThrow(() -> new RuntimeException("Doktor bulunamadı!"));
 
-        // 30 dakikalık çakışma kontrolü
-        LocalDateTime startRange = appointmentDate.minusMinutes(29);
-        LocalDateTime endRange = appointmentDate.plusMinutes(29);
-
-        List<Appointment> conflicts = appointmentRepository.findDoctorAppointmentsByDateAndStatus(
-                doctor, startRange, endRange, AppointmentStatus.SCHEDULED);
-
-        if (!conflicts.isEmpty()) {
-            throw new RuntimeException("Seçilen saatte doktorun başka bir randevusu bulunmaktadır. Lütfen en az 30 dakika sonrasını deneyin.");
-        }
-
         Patient patient = patientService.getPatientById(patientId)
                 .orElseThrow(() -> new RuntimeException("Hasta bulunamadı!"));
 
+        // DÜZELTİLDİ: 30 dakikalık çakışma kontrolü
+        LocalDateTime startRange = appointmentDate.minusMinutes(29);
+        LocalDateTime endRange = appointmentDate.plusMinutes(29);
+
+        System.out.println("Çakışma kontrolü yapılıyor...");
+        System.out.println("Kontrol aralığı: " + startRange + " - " + endRange);
+
+        // Doktorun bu zaman dilimindeki SCHEDULED randevularını kontrol et
+        List<Appointment> conflicts = appointmentRepository.findByDoctorAndAppointmentDateBetween(
+                doctor, startRange, endRange);
+
+        // Sadece SCHEDULED olanları filtrele
+        conflicts = conflicts.stream()
+                .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED)
+                .toList();
+
+        System.out.println("Çakışan randevu sayısı: " + conflicts.size());
+
+        if (!conflicts.isEmpty()) {
+            for (Appointment conflict : conflicts) {
+                System.out.println("  ÇAKIŞMA! Randevu ID: " + conflict.getId() +
+                        ", Tarih: " + conflict.getAppointmentDate() +
+                        ", Durum: " + conflict.getStatus());
+            }
+            throw new RuntimeException("Bu saatte doktorun başka bir randevusu var! Lütfen en az 30 dakika sonrasını deneyin.");
+        }
+
         Appointment appointment = new Appointment(patient, doctor, appointmentDate);
         appointment.setStatus(AppointmentStatus.SCHEDULED);
-        return appointmentRepository.save(appointment);
+
+        Appointment saved = appointmentRepository.save(appointment);
+        System.out.println("Randevu başarıyla oluşturuldu! ID: " + saved.getId());
+
+        return saved;
     }
 
     public Appointment updateAppointment(Long id, Appointment details) {
@@ -112,7 +163,6 @@ public class AppointmentService {
     }
 
     public Appointment saveAppointment(Appointment appointment) {
-        // Kaydetmeden önce tarih çakışma kontrolü eklemek isterseniz buraya da createAppointment'taki mantığı ekleyebiliriz.
         return appointmentRepository.save(appointment);
     }
 

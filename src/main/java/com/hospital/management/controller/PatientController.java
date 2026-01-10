@@ -36,18 +36,58 @@ public class PatientController {
     @PostMapping("/api/login")
     @ResponseBody
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials, HttpSession session) {
+        System.out.println("=== HASTA GİRİŞİ ===");
         String tcNo = credentials.get("tcNo");
         String password = credentials.get("password");
-        Optional<Patient> patient = patientService.login(tcNo);
-        if (patient.isPresent() && password != null && password.equals(patient.get().getPassword())) {
+
+        System.out.println("Gelen TC: " + tcNo);
+        System.out.println("Gelen Şifre: " + password);
+
+        Optional<Patient> patientOpt = patientService.getPatientByTcNo(tcNo);
+
+        if (patientOpt.isEmpty()) {
+            System.out.println("❌ Hasta bulunamadı! TC: " + tcNo);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("TC Kimlik numarası sistemde kayıtlı değil!");
+        }
+
+        Patient patient = patientOpt.get();
+        System.out.println("✅ Hasta bulundu:");
+        System.out.println("  - ID: " + patient.getId());
+        System.out.println("  - İsim: " + patient.getFirstName() + " " + patient.getLastName());
+        System.out.println("  - TC: " + patient.getTcNo());
+        System.out.println("  - Veritabanı Şifresi: " + patient.getPassword());
+
+        if (patient.getPassword() == null || patient.getPassword().isEmpty()) {
+            System.out.println("⚠️ UYARI: Hastanın şifresi boş! Otomatik şifre oluşturuluyor...");
+            // Şifre yoksa oluştur
+            String newPassword = generatePasswordForPatient(patient);
+            patient.setPassword(newPassword);
+            patientService.savePatient(patient);
+            System.out.println("✅ Yeni şifre oluşturuldu: " + newPassword);
+        }
+
+        if (password != null && password.equals(patient.getPassword())) {
+            // SESSION'A KAYDEDİYORUZ
             session.setAttribute("userType", "PATIENT");
-            session.setAttribute("userId", patient.get().getId());
-            session.setAttribute("userName", patient.get().getFirstName() + " " + patient.get().getLastName());
+            session.setAttribute("userId", patient.getId());
+            session.setAttribute("userName", patient.getFirstName() + " " + patient.getLastName());
+
+            System.out.println("✅ GİRİŞ BAŞARILI!");
+            System.out.println("  - Session User Type: " + session.getAttribute("userType"));
+            System.out.println("  - Session User ID: " + session.getAttribute("userId"));
+            System.out.println("  - Session User Name: " + session.getAttribute("userName"));
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
+            response.put("patientId", patient.getId());
+            response.put("patientName", patient.getFirstName() + " " + patient.getLastName());
             return ResponseEntity.ok(response);
+        } else {
+            System.out.println("❌ Şifre yanlış!");
+            System.out.println("  - Beklenen: " + patient.getPassword());
+            System.out.println("  - Girilen: " + password);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Şifre hatalı!");
         }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Giriş hatalı!");
     }
 
     @GetMapping("/view")
@@ -77,8 +117,10 @@ public class PatientController {
 
     @PostMapping("/add")
     public String savePatientFromForm(@ModelAttribute Patient patient) {
-        generatePasswordForPatient(patient);
+        String password = generatePasswordForPatient(patient);
+        patient.setPassword(password);
         patientService.savePatient(patient);
+        System.out.println("✅ Yeni hasta kaydedildi. ID: " + patient.getId() + ", Şifre: " + password);
         return "redirect:/patients/view";
     }
 
@@ -86,7 +128,6 @@ public class PatientController {
     public String showBookAppointmentPage(Model model, HttpSession session) {
         String userType = (String) session.getAttribute("userType");
 
-        // Eğer sekreter ise tüm hastaları seçebilmesi için listeye ekle
         if ("SECRETARY".equals(userType)) {
             model.addAttribute("allPatients", patientService.getAllPatients());
         } else if (session.getAttribute("userId") == null) {
@@ -101,13 +142,31 @@ public class PatientController {
     }
 
     @PostMapping("/appointments/book")
-    public String bookAppointment(@RequestParam("doctorId") Long doctorId, @RequestParam("appointmentDate") String dateStr, @RequestParam(value = "patientId", required = false) Long pId, HttpSession session) {
+    public String bookAppointment(@RequestParam("doctorId") Long doctorId,
+                                  @RequestParam("appointmentDate") String dateStr,
+                                  @RequestParam(value = "patientId", required = false) Long pId,
+                                  HttpSession session) {
         Long patientId = (pId != null) ? pId : (Long) session.getAttribute("userId");
-        if (patientId == null) return "redirect:/patients/login";
+
+        System.out.println("=== RANDEVU OLUŞTURMA ===");
+        System.out.println("Session'dan gelen Patient ID: " + session.getAttribute("userId"));
+        System.out.println("Parametre'den gelen Patient ID: " + pId);
+        System.out.println("Kullanılacak Patient ID: " + patientId);
+        System.out.println("Doktor ID: " + doctorId);
+        System.out.println("Tarih: " + dateStr);
+
+        if (patientId == null) {
+            System.out.println("❌ Patient ID null! Session boş olabilir.");
+            return "redirect:/patients/login";
+        }
+
         try {
             appointmentService.createAppointment(patientId, doctorId, LocalDateTime.parse(dateStr));
+            System.out.println("✅ Randevu başarıyla oluşturuldu!");
             return "redirect:/dashboard?success=RandevuOlusturuldu";
         } catch (Exception e) {
+            System.err.println("❌ Randevu oluşturma hatası: " + e.getMessage());
+            e.printStackTrace();
             return "redirect:/dashboard?error=" + URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);
         }
     }
@@ -115,19 +174,34 @@ public class PatientController {
     @GetMapping("/prescriptions")
     public String showPrescriptions(Model model, HttpSession session) {
         Long patientId = (Long) session.getAttribute("userId");
-        if (patientId == null) return "redirect:/patients/login";
-        model.addAttribute("prescriptionList", prescriptionService.getPrescriptionsByPatient(patientId));
+
+        System.out.println("=== HASTA REÇETE SAYFASI ===");
+        System.out.println("Session'dan Patient ID: " + patientId);
+
+        if (patientId == null) {
+            System.out.println("❌ Session'da patient ID yok! Login sayfasına yönlendiriliyor.");
+            return "redirect:/patients/login";
+        }
+
+        List<Prescription> prescriptions = prescriptionService.getPrescriptionsByPatient(patientId);
+        System.out.println("✅ Bulunan reçete sayısı: " + prescriptions.size());
+
+        model.addAttribute("prescriptionList", prescriptions);
         return "patient-prescriptions";
     }
 
-    private void generatePasswordForPatient(Patient patient) {
+    private String generatePasswordForPatient(Patient patient) {
         String tc = patient.getTcNo();
         String telefon = patient.getPhone();
         String temizTelefon = (telefon != null) ? telefon.replaceAll("\\D", "") : "";
+
         if (tc != null && tc.length() >= 4 && temizTelefon.length() >= 4) {
-            patient.setPassword(temizTelefon.substring(temizTelefon.length() - 4) + tc.substring(0, 4));
+            String password = temizTelefon.substring(temizTelefon.length() - 4) + tc.substring(0, 4);
+            System.out.println("Şifre oluşturuldu: " + password + " (Telefon son 4: " + temizTelefon.substring(temizTelefon.length() - 4) + " + TC ilk 4: " + tc.substring(0, 4) + ")");
+            return password;
         } else {
-            patient.setPassword("123456");
+            System.out.println("⚠️ Varsayılan şifre kullanılıyor: 123456");
+            return "123456";
         }
     }
 
@@ -135,8 +209,10 @@ public class PatientController {
     @ResponseBody
     public ResponseEntity<?> createPatient(@RequestBody Patient patient) {
         try {
-            generatePasswordForPatient(patient);
-            return ResponseEntity.status(HttpStatus.CREATED).body(patientService.savePatient(patient));
+            String password = generatePasswordForPatient(patient);
+            patient.setPassword(password);
+            Patient saved = patientService.savePatient(patient);
+            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
