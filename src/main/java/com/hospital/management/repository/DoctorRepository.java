@@ -25,9 +25,6 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
     // Soyisme göre doktor ara
     List<Doctor> findByLastNameContainingIgnoreCase(String lastName);
 
-    // Email'e göre doktor bul
-    Optional<Doctor> findByEmail(String email);
-
     // Username var mı kontrol et
     boolean existsByUsername(String username);
 }

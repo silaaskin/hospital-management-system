@@ -24,11 +24,6 @@ public class DoctorService {
         return doctorRepository.findById(id);
     }
 
-    // Kullanıcı adına göre doktor bul
-    public Optional<Doctor> getDoctorByUsername(String username) {
-        return doctorRepository.findByUsername(username);
-    }
-
     // Uzmanlık alanına göre doktorları listele
     public List<Doctor> getDoctorsBySpecialization(String specialization) {
         return doctorRepository.findBySpecialization(specialization);
@@ -41,12 +36,10 @@ public class DoctorService {
 
     // Yeni doktor kaydet
     public Doctor saveDoctor(Doctor doctor) {
-        // Username kontrolü
         if (doctor.getUsername() != null && doctorRepository.existsByUsername(doctor.getUsername())) {
             if (doctor.getId() == null) {
                 throw new RuntimeException("Bu kullanıcı adı zaten kullanılıyor!");
             }
-            // Güncelleme işleminde mevcut doktorun username'i kontrol edilir
             Optional<Doctor> existing = doctorRepository.findByUsername(doctor.getUsername());
             if (existing.isPresent() && !existing.get().getId().equals(doctor.getId())) {
                 throw new RuntimeException("Bu kullanıcı adı başka bir doktor tarafından kullanılıyor!");
@@ -63,14 +56,10 @@ public class DoctorService {
         doctor.setFirstName(doctorDetails.getFirstName());
         doctor.setLastName(doctorDetails.getLastName());
         doctor.setSpecialization(doctorDetails.getSpecialization());
-
-        // phone alanı modelden silindiği için buradaki setPhone satırı kaldırıldı.
-
-        doctor.setEmail(doctorDetails.getEmail());
         doctor.setDepartment(doctorDetails.getDepartment());
         doctor.setUsername(doctorDetails.getUsername());
 
-        // Şifre sadece değiştirildiyse güncelle
+        // Şifre sadece dolu gönderildiyse güncelle
         if (doctorDetails.getPassword() != null && !doctorDetails.getPassword().isEmpty()) {
             doctor.setPassword(doctorDetails.getPassword());
         }
@@ -85,17 +74,7 @@ public class DoctorService {
         doctorRepository.delete(doctor);
     }
 
-    // İsme göre doktor ara
-    public List<Doctor> searchDoctorsByName(String name) {
-        List<Doctor> byFirstName = doctorRepository.findByFirstNameContainingIgnoreCase(name);
-        List<Doctor> byLastName = doctorRepository.findByLastNameContainingIgnoreCase(name);
-
-        // İki listeyi birleştir
-        byFirstName.addAll(byLastName);
-        return byFirstName.stream().distinct().toList();
-    }
-
-    // Doktor girişi (basit authentication)
+    // Doktor girişi
     public Optional<Doctor> login(String username, String password) {
         Optional<Doctor> doctor = doctorRepository.findByUsername(username);
         if (doctor.isPresent() && doctor.get().getPassword().equals(password)) {

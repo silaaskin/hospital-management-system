@@ -28,7 +28,6 @@
         </a>
     </div>
 
-    <!-- DOKTOR İÇİN SEKMELER -->
     <ul class="nav nav-pills mb-4 shadow-sm p-2 bg-white rounded-3" id="appointmentTabs" role="tablist" th:if="${session.userType == 'DOCTOR'}">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="today-tab" data-bs-toggle="pill" data-bs-target="#today" type="button" role="tab">
@@ -55,7 +54,6 @@
         </li>
     </ul>
 
-    <!-- HASTA İÇİN SEKMELER -->
     <ul class="nav nav-pills mb-4 shadow-sm p-2 bg-white rounded-3" id="patientTabs" role="tablist" th:if="${session.userType == 'PATIENT'}">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="patient-pending-tab" data-bs-toggle="pill" data-bs-target="#patient-pending" type="button" role="tab">
@@ -74,7 +72,6 @@
         </li>
     </ul>
 
-    <!-- DOKTOR İÇİN İÇERİK -->
     <div class="tab-content" id="appointmentTabsContent" th:if="${session.userType == 'DOCTOR'}">
         <div class="tab-pane fade show active" id="today" role="tabpanel">
             <div class="row g-4" id="todayContainer">
@@ -98,7 +95,6 @@
         </div>
     </div>
 
-    <!-- HASTA İÇİN İÇERİK -->
     <div class="tab-content" id="patientTabsContent" th:if="${session.userType == 'PATIENT'}">
         <div class="tab-pane fade show active" id="patient-pending" role="tabpanel">
             <div class="row g-4">
@@ -169,8 +165,8 @@
                                 <i class="far fa-calendar-alt text-primary me-1"></i>
                                 <span th:text="${#temporals.format(app.appointmentDate, 'dd.MM.yyyy HH:mm')}"></span>
                             </span>
-                            <span class="badge" th:classappend="${app.status == 'SCHEDULED' ? 'badge-scheduled' : (app.status == 'COMPLETED' ? 'badge-completed' : 'badge-cancelled')}">
-                                <span th:text="${app.status == 'SCHEDULED' ? 'Bekliyor' : (app.status == 'COMPLETED' ? 'Tamamlandı' : 'İptal')}"></span>
+                            <span class="badge" th:classappend="${app.status.name() == 'SCHEDULED' ? 'badge-scheduled' : (app.status.name() == 'COMPLETED' ? 'badge-completed' : 'badge-cancelled')}">
+                                <span th:text="${app.status.name() == 'SCHEDULED' ? 'Bekliyor' : (app.status.name() == 'COMPLETED' ? 'Tamamlandı' : 'İptal')}"></span>
                             </span>
                         </div>
                         <div class="card-body pt-2">
@@ -190,9 +186,7 @@
     </div>
 </div>
 
-<!-- Doktor için modaller -->
 <div th:if="${session.userType == 'DOCTOR'}">
-    <!-- Reçete Yazma Modal -->
     <div class="modal fade" id="prescriptionModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -206,8 +200,12 @@
                         <input type="text" class="form-control" id="prescriptionPatient" readonly>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Reçete Notları</label>
-                        <textarea class="form-control" id="prescriptionNotes" rows="6" placeholder="İlaç adı, doz, kullanım süresi vb. bilgileri yazınız..."></textarea>
+                        <label class="form-label fw-bold">İlaçlar *</label>
+                        <textarea class="form-control" id="prescriptionText" rows="4" placeholder="İlaç adı, doz, kullanım süresi vb. bilgileri yazınız..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Doktor Notları (Opsiyonel)</label>
+                        <textarea class="form-control" id="prescriptionNotes" rows="2" placeholder="Hastaya özel tavsiyeler veya ek notlar..."></textarea>
                     </div>
                     <div id="prescriptionError" class="alert alert-danger d-none"></div>
                 </div>
@@ -221,7 +219,6 @@
         </div>
     </div>
 
-    <!-- Muayene Tamamlama Modal -->
     <div class="modal fade" id="completeModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -255,11 +252,9 @@
     });
 
     function loadAppointments() {
-        console.log('Doktor randevuları yükleniyor...');
         fetch('/appointments/api/doctor-appointments')
             .then(res => res.json())
             .then(data => {
-                console.log('Randevular yüklendi:', data);
                 appointments = data;
                 renderAppointments();
                 updateBadges();
@@ -357,14 +352,12 @@
     }
 
     function confirmComplete() {
-        console.log('Muayene tamamlanıyor:', currentAppointmentId);
         fetch('/appointments/api/' + currentAppointmentId + '/complete', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' }
         })
         .then(res => res.json())
         .then(data => {
-            console.log('Cevap:', data);
             if (data.success) {
                 bootstrap.Modal.getInstance(document.getElementById('completeModal')).hide();
                 alert('✅ Muayene tamamlandı!');
@@ -372,16 +365,13 @@
             } else {
                 alert('❌ Hata: ' + (data.error || 'Bilinmeyen hata'));
             }
-        })
-        .catch(err => {
-            console.error('Hata:', err);
-            alert('❌ Bağlantı hatası: ' + err.message);
         });
     }
 
     function showPrescriptionModal(appointmentId, patientName) {
         currentAppointmentId = appointmentId;
         document.getElementById('prescriptionPatient').value = patientName;
+        document.getElementById('prescriptionText').value = '';
         document.getElementById('prescriptionNotes').value = '';
         document.getElementById('prescriptionError').classList.add('d-none');
         const modal = new bootstrap.Modal(document.getElementById('prescriptionModal'));
@@ -389,21 +379,21 @@
     }
 
     function savePrescription() {
+        const text = document.getElementById('prescriptionText').value.trim();
         const notes = document.getElementById('prescriptionNotes').value.trim();
         const errorDiv = document.getElementById('prescriptionError');
 
-        if (!notes) {
-            errorDiv.textContent = 'Lütfen reçete notlarını girin';
+        if (!text) {
+            errorDiv.textContent = 'Lütfen ilaç bilgilerini girin';
             errorDiv.classList.remove('d-none');
             return;
         }
 
         const data = {
             appointmentId: currentAppointmentId,
-            prescription: notes
+            prescription: text,
+            notes: notes
         };
-
-        console.log('Reçete kaydediliyor:', data);
 
         fetch('/appointments/api/save-prescription', {
             method: 'POST',
@@ -412,7 +402,6 @@
         })
         .then(res => res.json())
         .then(data => {
-            console.log('Cevap:', data);
             if (data.success) {
                 bootstrap.Modal.getInstance(document.getElementById('prescriptionModal')).hide();
                 alert('✅ Reçete başarıyla kaydedildi!');
@@ -422,7 +411,6 @@
             }
         })
         .catch(err => {
-            console.error('Hata:', err);
             errorDiv.textContent = 'Hata: ' + err.message;
             errorDiv.classList.remove('d-none');
         });

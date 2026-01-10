@@ -21,8 +21,6 @@ public class Doctor {
     @Column(nullable = false)
     private String specialization;
 
-    private String email;
-
     private String department;
 
     @Column(nullable = false, unique = true)
@@ -37,8 +35,7 @@ public class Doctor {
     @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Prescription> prescriptions = new ArrayList<>();
 
-    public Doctor() {
-    }
+    public Doctor() {}
 
     public Doctor(String firstName, String lastName, String specialization) {
         this.firstName = firstName;
@@ -54,8 +51,6 @@ public class Doctor {
     public void setLastName(String lastName) { this.lastName = lastName; }
     public String getSpecialization() { return specialization; }
     public void setSpecialization(String specialization) { this.specialization = specialization; }
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
     public String getDepartment() { return department; }
     public void setDepartment(String department) { this.department = department; }
     public String getUsername() { return username; }
@@ -66,5 +61,6 @@ public class Doctor {
     public void setAppointments(List<Appointment> appointments) { this.appointments = appointments; }
     public List<Prescription> getPrescriptions() { return prescriptions; }
     public void setPrescriptions(List<Prescription> prescriptions) { this.prescriptions = prescriptions; }
+
     public String getFullName() { return "Dr. " + firstName + " " + lastName; }
 }

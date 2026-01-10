@@ -44,7 +44,6 @@ public class DataSeeder implements CommandLineRunner {
                 d.setDepartment(data[3]);
                 d.setUsername(data[4]);
                 d.setPassword("1234");
-                // d.setPhone(data[...]); satırı tamamen kaldırıldı, çünkü bu metod artık Doctor.java'da yok.
                 doctorRepository.save(d);
             }
         }

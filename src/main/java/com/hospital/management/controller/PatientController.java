@@ -124,19 +124,22 @@ public class PatientController {
         return "redirect:/patients/view";
     }
 
+    // PatientController.java içindeki ilgili metot
     @GetMapping("/appointments/book")
     public String showBookAppointmentPage(Model model, HttpSession session) {
         String userType = (String) session.getAttribute("userType");
 
+        // Sekreter girişi yapılmışsa tüm hastaları listele
         if ("SECRETARY".equals(userType)) {
-            model.addAttribute("allPatients", patientService.getAllPatients());
+            model.addAttribute("allPatients", patientService.getAllPatients()); // Sekreterin seçebilmesi için
         } else if (session.getAttribute("userId") == null) {
             return "redirect:/patients/login";
         }
 
         List<Doctor> doctors = doctorService.getAllDoctors();
         model.addAttribute("doctors", doctors);
-        model.addAttribute("departments", doctors.stream().map(Doctor::getSpecialization).distinct().collect(Collectors.toList()));
+        model.addAttribute("departments", doctors.stream()
+                .map(Doctor::getSpecialization).distinct().collect(Collectors.toList()));
 
         return "patient-appointment-book";
     }
