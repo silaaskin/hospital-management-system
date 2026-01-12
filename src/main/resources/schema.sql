@@ -83,3 +83,12 @@ CREATE TABLE IF NOT EXISTS triage_records (
     PRIMARY KEY (id),
     FOREIGN KEY (patient_id) REFERENCES patients (id)
     ) ENGINE=InnoDB //
+
+CREATE TABLE IF NOT EXISTS appointment_logs (
+    id bigint NOT NULL AUTO_INCREMENT,
+    appointment_id bigint,
+    action_type varchar(50),
+    log_date datetime DEFAULT CURRENT_TIMESTAMP,
+    details text,
+    PRIMARY KEY (id)
+    ) ENGINE=InnoDB //

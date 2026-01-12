@@ -1,29 +1,42 @@
--- Varsa eski tetikleyicileri siliyoruz
+-- 1. Randevu Ekleme Logu
 DROP TRIGGER IF EXISTS trg_after_appointment_insert //
-DROP TRIGGER IF EXISTS trg_after_appointment_delete //
-
--- Yeni randevu eklendiğinde çalışır
 CREATE TRIGGER trg_after_appointment_insert
     AFTER INSERT ON appointments
     FOR EACH ROW
 BEGIN
-    -- Bu tetikleyici, yeni bir randevu eklendiğinde
-    -- başka bir tabloya log atabilir veya durumu kontrol edebilir.
-    -- Örneğin: Randevu eklendiğinde hastanın son randevu tarihini bir yere kaydedebilir.
-    SET @last_inserted_id = NEW.id;
+    INSERT INTO appointment_logs (appointment_id, action_type, details)
+    VALUES (NEW.id, 'INSERT', CONCAT('Yeni randevu oluşturuldu. Hasta ID: ', NEW.patient_id));
 END //
 
--- Randevu durumu güncellendiğinde (Örn: SCHEDULED -> COMPLETED)
+-- 2. Muayene Tamamlama Logu
 DROP TRIGGER IF EXISTS trg_before_appointment_status_update //
 CREATE TRIGGER trg_before_appointment_status_update
     BEFORE UPDATE ON appointments
     FOR EACH ROW
 BEGIN
-    -- Eğer randevu tamamlandı olarak işaretlenirse,
-    -- otomatik olarak işlem tarihini notlara ekleyebiliriz.
     IF OLD.status <> NEW.status AND NEW.status = 'COMPLETED' THEN
-        -- Not alanını otomatik güncelleme örneği
-        -- SET NEW.notes = CONCAT(IFNULL(OLD.notes, ''), ' [Muayene Tamamlandı: ', NOW(), ']');
         SET NEW.status = 'COMPLETED';
 END IF;
+END //
+
+-- 3. Tarih Değişikliği Logu
+DROP TRIGGER IF EXISTS trg_before_appointment_data_change //
+CREATE TRIGGER trg_before_appointment_data_change
+    BEFORE UPDATE ON appointments
+    FOR EACH ROW
+BEGIN
+    IF OLD.appointment_date <> NEW.appointment_date THEN
+        INSERT INTO appointment_logs (appointment_id, action_type, details)
+        VALUES (OLD.id, 'UPDATE_DATE', CONCAT('Eski: ', OLD.appointment_date, ' -> Yeni: ', NEW.appointment_date));
+END IF;
+END //
+
+-- 4. Silme Logu
+DROP TRIGGER IF EXISTS trg_after_appointment_delete //
+CREATE TRIGGER trg_after_appointment_delete
+    AFTER DELETE ON appointments
+    FOR EACH ROW
+BEGIN
+    INSERT INTO appointment_logs (appointment_id, action_type, details)
+    VALUES (OLD.id, 'DELETE', 'Randevu silindi.');
 END //
