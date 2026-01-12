@@ -6,6 +6,7 @@
     <title>Doktor Listesi - MHRS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
             --mhrs-primary: #0d6efd;
@@ -403,9 +404,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
+<script th:inline="javascript">
     function filterDoctors() {
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
         const cards = document.querySelectorAll('.doctor-card');
         const grid = document.getElementById('doctorsGrid');
         const emptyState = document.getElementById('emptyState');
@@ -424,6 +425,7 @@
             }
         });
 
+        // Arama sonucu bulunamadığında sessizce uyarı verilebilir veya boş ekran gösterilir
         if (visibleCount === 0) {
             grid.style.display = 'none';
             emptyState.style.display = 'block';
@@ -432,6 +434,37 @@
             emptyState.style.display = 'none';
         }
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // URL'den gelen olası hata veya başarı mesajlarını yakala
+        const urlParams = new URLSearchParams(window.location.search);
+        const errorParam = urlParams.get('error');
+
+        if (errorParam) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Hata!',
+                text: decodeURIComponent(errorParam),
+                confirmButtonColor: '#0d6efd'
+            });
+        }
+
+        // Eğer liste boş gelirse (Sunucu tarafında veri yoksa)
+        /*<![CDATA[*/
+        const doctorCount = [[${#lists.size(doctors)}]];
+        /*]]>*/
+
+        if (doctorCount === 0) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Kayıtlı Doktor Bulunmuyor',
+                text: 'Şu an sistemde aktif doktor kaydı bulunmamaktadır.',
+                confirmButtonText: 'Panele Dön'
+            }).then(() => {
+                window.location.href = "/dashboard";
+            });
+        }
+    });
 </script>
 
 </body>

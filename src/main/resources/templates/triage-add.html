@@ -213,7 +213,6 @@
 
 <div class="emergency-container">
   <div class="emergency-card">
-    <!-- Card Header -->
     <div class="card-header-emergency">
       <div class="header-content">
         <i class="fas fa-ambulance emergency-icon"></i>
@@ -223,14 +222,12 @@
     </div>
 
     <div class="card-body-emergency">
-      <!-- Error Alert -->
       <div th:if="${param.error}" class="alert-custom">
         <i class="fas fa-exclamation-circle me-2"></i>
         <strong>Hata:</strong> Hasta bulunamadı! Lütfen TC numarasını kontrol edin.
       </div>
 
       <form action="/triage/add" method="post">
-        <!-- 1. Hasta Bilgisi -->
         <div class="section-header">
           <span class="section-number">1</span>
           <i class="fas fa-user-injured"></i>
@@ -254,7 +251,6 @@
           </div>
         </div>
 
-        <!-- 2. Vital Bulgular -->
         <div class="section-header">
           <span class="section-number">2</span>
           <i class="fas fa-heartbeat"></i>
@@ -312,7 +308,6 @@
           </div>
         </div>
 
-        <!-- 3. Şikayet -->
         <div class="section-header">
           <span class="section-number">3</span>
           <i class="fas fa-notes-medical"></i>
@@ -338,7 +333,6 @@
                     placeholder="Ek bilgiler veya gözlemler..."></textarea>
         </div>
 
-        <!-- Buttons -->
         <div class="d-grid gap-3">
           <button type="submit" class="btn-emergency">
             <i class="fas fa-save me-2"></i>
@@ -355,7 +349,6 @@
 </div>
 
 <script>
-  // TC sadece rakam
   document.querySelector('input[name="tcNo"]').addEventListener('input', function(e) {
       this.value = this.value.replace(/[^0-9]/g, '');
   });

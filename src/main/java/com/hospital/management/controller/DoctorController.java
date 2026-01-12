@@ -22,10 +22,6 @@ public class DoctorController {
     @Autowired
     private DoctorService doctorService;
 
-    // ==========================================
-    //          GİRİŞ VE GÜVENLİK
-    // ==========================================
-
     @GetMapping("/login")
     public String showLoginPage() {
         return "login-doctor"; // templates/login-doctor.html dosyasını açar
@@ -41,7 +37,6 @@ public class DoctorController {
             Doctor doctor = doctorService.login(username, password)
                     .orElseThrow(() -> new RuntimeException("Kullanıcı adı veya şifre hatalı!"));
 
-            // OTURUM BAŞLAT
             session.setAttribute("userType", "DOCTOR");
             session.setAttribute("userId", doctor.getId());
             session.setAttribute("userName", doctor.getFirstName() + " " + doctor.getLastName());
@@ -54,9 +49,6 @@ public class DoctorController {
         }
     }
 
-    // ==========================================
-    //          VIEW (HTML) METODLARI
-    // ==========================================
 
     @GetMapping("/view")
     public String showAllDoctors(Model model) {
@@ -72,10 +64,6 @@ public class DoctorController {
         model.addAttribute("doctor", doctor);
         return "doctor-detail";
     }
-
-    // ==========================================
-    //          API (JSON) METODLARI
-    // ==========================================
 
     @GetMapping("/api")
     @ResponseBody
@@ -100,7 +88,6 @@ public class DoctorController {
         return ResponseEntity.ok(doctorService.getDoctorsBySpecialization(specialization));
     }
 
-    // (Diğer arama metodların varsa buraya ekleyebilirsin, temel yapı bu şekildedir)
 
     @PostMapping("/api")
     @ResponseBody

@@ -308,7 +308,6 @@
           </div>
 
           <div class="card-body-prescription">
-            <!-- Doctor Info (for Patient view) -->
             <div class="person-info doctor" th:if="${session.userType == 'PATIENT'}">
               <h5>
                 <i class="fas fa-user-md me-2"></i>
@@ -316,7 +315,6 @@
               </h5>
             </div>
 
-            <!-- Patient Info (for Doctor view) -->
             <div class="person-info patient" th:if="${session.userType == 'DOCTOR'}">
               <h5>
                 <i class="fas fa-user-injured me-2"></i>
@@ -324,7 +322,6 @@
               </h5>
             </div>
 
-            <!-- Prescription Content -->
             <div class="info-block">
               <div class="info-label">
                 <i class="fas fa-capsules text-success"></i>
@@ -335,7 +332,6 @@
               </div>
             </div>
 
-            <!-- Dosage -->
             <div class="info-block" th:if="${item.dosage}">
               <div class="info-label">
                 <i class="fas fa-prescription-bottle text-info"></i>
@@ -346,7 +342,6 @@
               </div>
             </div>
 
-            <!-- Instructions -->
             <div class="info-block" th:if="${item.instructions}">
               <div class="info-label">
                 <i class="fas fa-info-circle text-primary"></i>
@@ -357,7 +352,6 @@
               </div>
             </div>
 
-            <!-- Duration -->
             <div class="info-block" th:if="${item.durationDays}">
               <div class="info-label">
                 <i class="fas fa-calendar-check text-success"></i>
@@ -368,7 +362,6 @@
                             </span>
             </div>
 
-            <!-- Notes -->
             <div class="note-box" th:if="${item.notes}">
               <strong>
                 <i class="fas fa-sticky-note me-2"></i>

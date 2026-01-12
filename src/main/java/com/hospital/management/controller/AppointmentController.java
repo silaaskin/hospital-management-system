@@ -46,8 +46,7 @@ public class AppointmentController {
             allUserApps = appointmentService.getAppointmentsByPatient(userId);
             model.addAttribute("pageTitle", "Randevularım");
 
-            // PROCEDURE ENTEGRASYONU
-            // patientService artık yukarıda tanımlandığı için hata vermeyecektir.
+
             patientService.getPatientById(userId).ifPresent(patient -> {
                 Integer upcomingCount = appointmentService.getUpcomingCountByTc(patient.getTcNo());
                 model.addAttribute("upcomingCount", upcomingCount);
@@ -194,25 +193,22 @@ public class AppointmentController {
 
         model.addAttribute("appointments", validApps);
     }
-    // AppointmentController.java içindeki metot
-    // src/main/java/com/hospital/management/controller/AppointmentController.java
+
 
     @GetMapping("/api/doctor-stats")
     @ResponseBody
-    @Transactional // Bu metodun bir transaction içinde çalışmasını sağlar
+    @Transactional
     public ResponseEntity<?> getDoctorStats(HttpSession session) {
         Long doctorId = (Long) session.getAttribute("userId");
         if (doctorId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Yetkisiz erişim");
 
         try {
-            // Procedure çağrısı
             List<Object[]> result = appointmentRepository.getDoctorDashboardStats(doctorId);
 
             Map<String, Object> response = new HashMap<>();
 
             if (result != null && !result.isEmpty() && result.get(0) != null) {
                 Object[] stats = result.get(0);
-                // stats[0]: today, stats[1]: tomorrow, stats[2]: pending
                 response.put("todayCount", stats[0] != null ? stats[0].toString() : "0");
                 response.put("tomorrowCount", stats[1] != null ? stats[1].toString() : "0");
                 response.put("pendingCount", stats[2] != null ? stats[2].toString() : "0");
@@ -224,7 +220,6 @@ public class AppointmentController {
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            // Hatayı konsola yazdırarak detayını görebiliriz
             System.err.println("Dashboard Stats Hatası: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

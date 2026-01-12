@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hasta Girişi - MHRS</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     :root {
         --mhrs-success: #28a745;
@@ -421,7 +422,6 @@
     </div>
   </div>
 </div>
-
 <script>
   function togglePassword() {
       const passwordInput = document.getElementById('password');
@@ -438,7 +438,7 @@
       }
   }
 
-  // TC No validation
+  // TC No sadece rakam girişi
   document.getElementById('tcNo').addEventListener('input', function(e) {
       this.value = this.value.replace(/[^0-9]/g, '');
   });
@@ -449,41 +449,40 @@
       const tcNo = document.getElementById('tcNo').value;
       const password = document.getElementById('password').value;
       const loginBtn = document.getElementById('loginBtn');
-      const errorMsg = document.getElementById('msg');
-      const errorText = document.getElementById('errorText');
 
       // TC validation
       if (tcNo.length !== 11) {
-          errorText.textContent = 'TC Kimlik numarası 11 haneli olmalıdır!';
-          errorMsg.classList.add('show');
+          Swal.fire({
+              icon: 'warning',
+              title: 'Geçersiz TC',
+              text: 'TC Kimlik numarası 11 haneli olmalıdır!',
+              confirmButtonColor: '#28a745'
+          });
           return;
       }
 
-      // Hide previous error
-      errorMsg.classList.remove('show');
-
-      // Show loading state
+      // Buton yükleme durumu
       loginBtn.classList.add('loading');
       loginBtn.disabled = true;
 
       fetch('/patients/api/login', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-              tcNo: tcNo,
-              password: password
-          })
+          body: JSON.stringify({ tcNo: tcNo, password: password })
       })
       .then(async res => {
           if (res.ok) {
               return res.json().then(data => {
-                  // Success animation
-                  loginBtn.innerHTML = '<i class="fas fa-check-circle"></i> Başarılı! Yönlendiriliyor...';
-                  loginBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
-
-                  setTimeout(() => {
+                  // Başarı mesajı ve yönlendirme
+                  Swal.fire({
+                      icon: 'success',
+                      title: 'Giriş Başarılı',
+                      text: 'Sağlık panelinize yönlendiriliyorsunuz...',
+                      timer: 1500,
+                      showConfirmButton: false
+                  }).then(() => {
                       window.location.href = '/dashboard';
-                  }, 800);
+                  });
               });
           } else {
               const errorMsg = await res.text();
@@ -494,24 +493,20 @@
           loginBtn.classList.remove('loading');
           loginBtn.disabled = false;
 
-          errorText.textContent = err.message || 'TC Kimlik numarası veya şifre hatalı!';
-          errorMsg.classList.add('show');
+          // Modern Hata Kutusu
+          Swal.fire({
+              icon: 'error',
+              title: 'Hata',
+              text: err.message,
+              confirmButtonColor: '#dc3545'
+          });
 
-          // Shake animation
-          document.querySelector('.login-card').style.animation = 'shake 0.5s';
-          setTimeout(() => {
-              document.querySelector('.login-card').style.animation = '';
-          }, 500);
+          // Kart titreme efekti
+          const card = document.querySelector('.login-card');
+          card.style.animation = 'none';
+          card.offsetHeight; /* reflow */
+          card.style.animation = 'shake 0.5s';
       });
-  });
-
-  // Clear error on input
-  document.getElementById('tcNo').addEventListener('input', function() {
-      document.getElementById('msg').classList.remove('show');
-  });
-
-  document.getElementById('password').addEventListener('input', function() {
-      document.getElementById('msg').classList.remove('show');
   });
 </script>
 

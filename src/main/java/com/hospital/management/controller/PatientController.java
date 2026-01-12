@@ -59,7 +59,6 @@ public class PatientController {
 
         if (patient.getPassword() == null || patient.getPassword().isEmpty()) {
             System.out.println("⚠️ UYARI: Hastanın şifresi boş! Otomatik şifre oluşturuluyor...");
-            // Şifre yoksa oluştur
             String newPassword = generatePasswordForPatient(patient);
             patient.setPassword(newPassword);
             patientService.savePatient(patient);
@@ -67,7 +66,6 @@ public class PatientController {
         }
 
         if (password != null && password.equals(patient.getPassword())) {
-            // SESSION'A KAYDEDİYORUZ
             session.setAttribute("userType", "PATIENT");
             session.setAttribute("userId", patient.getId());
             session.setAttribute("userName", patient.getFirstName() + " " + patient.getLastName());
@@ -124,12 +122,10 @@ public class PatientController {
         return "redirect:/patients/view";
     }
 
-    // PatientController.java içindeki ilgili metot
     @GetMapping("/appointments/book")
     public String showBookAppointmentPage(Model model, HttpSession session) {
         String userType = (String) session.getAttribute("userType");
 
-        // Sekreter girişi yapılmışsa tüm hastaları listele
         if ("SECRETARY".equals(userType)) {
             model.addAttribute("allPatients", patientService.getAllPatients()); // Sekreterin seçebilmesi için
         } else if (session.getAttribute("userId") == null) {

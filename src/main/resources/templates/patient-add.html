@@ -263,7 +263,6 @@
 
     <div class="form-body">
       <form id="addPatientForm">
-        <!-- Kişisel Bilgiler -->
         <div class="section-title">
           <i class="fas fa-id-card"></i>
           Kişisel Bilgiler
@@ -331,7 +330,6 @@
 
         <hr class="section-divider">
 
-        <!-- İletişim ve Sağlık Bilgileri -->
         <div class="section-title">
           <i class="fas fa-phone"></i>
           İletişim ve Sağlık Bilgileri
@@ -403,7 +401,6 @@
 
         <hr class="section-divider">
 
-        <!-- Butonlar -->
         <div class="d-grid gap-3 mt-4">
           <button type="submit" class="btn btn-submit" id="submitBtn">
             <i class="fas fa-check-circle me-2"></i>
@@ -420,12 +417,10 @@
 </div>
 
 <script>
-  // TC No sadece rakam
   document.getElementById('tcNo').addEventListener('input', function(e) {
       this.value = this.value.replace(/[^0-9]/g, '');
   });
 
-  // Telefon sadece rakam
   document.getElementById('phone').addEventListener('input', function(e) {
       this.value = this.value.replace(/[^0-9]/g, '');
   });
@@ -448,7 +443,7 @@
           birthDate: document.getElementById('birthDate').value || null
       };
 
-      // Validation
+
       if (patientData.tcNo.length !== 11) {
           alert('❌ TC Kimlik numarası 11 haneli olmalıdır!');
           submitBtn.classList.remove('loading');

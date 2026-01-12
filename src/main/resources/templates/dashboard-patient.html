@@ -6,6 +6,7 @@
   <title>Hasta Paneli - MHRS</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     :root {
         --mhrs-primary: #0d6efd;
@@ -489,6 +490,61 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+  document.addEventListener('DOMContentLoaded', function() {
+      // Thymeleaf ile URL parametrelerini alıyoruz
+      /*<![CDATA[*/
+      const urlParams = new URLSearchParams(window.location.search);
+      const successParam = urlParams.get('success');
+      const errorParam = urlParams.get('error');
+      /*]]>*/
 
+      // Sadece 'success' parametresi varsa mesaj göster
+      if (successParam) {
+          Swal.fire({
+              icon: 'success',
+              title: 'İşlem Başarılı!',
+              text: 'İşleminiz başarıyla tamamlandı.',
+              confirmButtonColor: '#28a745',
+              timer: 2500,
+              showConfirmButton: false
+          });
+      }
+
+      // Sadece 'error' parametresi varsa mesaj göster
+      if (errorParam) {
+          Swal.fire({
+              icon: 'error',
+              title: 'Hata!',
+              text: errorParam, // Backend'den gelen hata mesajı
+              confirmButtonColor: '#dc3545'
+          });
+      }
+
+      // Güvenli Çıkış Onayı (Bu her zaman çalışmalı ama sadece tıklanınca açılır)
+      const logoutBtn = document.querySelector('.logout-btn');
+      if(logoutBtn) {
+          logoutBtn.addEventListener('click', function(e) {
+              e.preventDefault();
+              const logoutUrl = this.getAttribute('href');
+
+              Swal.fire({
+                  title: 'Çıkış Yapılsın mı?',
+                  text: "Oturumunuz güvenli bir şekilde sonlandırılacaktır.",
+                  icon: 'warning',
+                  showCancelButton: true,
+                  confirmButtonColor: '#dc3545',
+                  cancelButtonColor: '#6c757d',
+                  confirmButtonText: 'Evet, Çıkış Yap',
+                  cancelButtonText: 'Vazgeç'
+              }).then((result) => {
+                  if (result.isConfirmed) {
+                      window.location.href = logoutUrl;
+                  }
+              });
+          });
+      }
+  });
+</script>
 </body>
 </html>

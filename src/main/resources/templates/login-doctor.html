@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Doktor Girişi - MHRS</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     :root {
         --mhrs-primary: #0d6efd;
@@ -407,13 +408,8 @@
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
       const loginBtn = document.getElementById('loginBtn');
-      const errorMsg = document.getElementById('msg');
-      const errorText = document.getElementById('errorText');
 
-      // Hide previous error
-      errorMsg.classList.remove('show');
-
-      // Show loading state
+      // Loading durumunu başlat
       loginBtn.classList.add('loading');
       loginBtn.disabled = true;
 
@@ -432,41 +428,43 @@
       })
       .then(data => {
           if(data.success) {
-              // Success animation
-              loginBtn.innerHTML = '<i class="fas fa-check-circle"></i> Başarılı! Yönlendiriliyor...';
+              // Başarı animasyonu ve SweetAlert
+              loginBtn.innerHTML = '<i class="fas fa-check-circle"></i> Başarılı!';
               loginBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
 
-              setTimeout(() => {
+              Swal.fire({
+                  icon: 'success',
+                  title: 'Giriş Başarılı',
+                  text: 'Doktor paneline yönlendiriliyorsunuz...',
+                  timer: 1500,
+                  showConfirmButton: false
+              }).then(() => {
                   window.location.href = '/dashboard';
-              }, 800);
+              });
           } else {
               throw new Error('Giriş başarısız!');
           }
       })
       .catch(err => {
+          // Hata durumunda butonu eski haline getir
           loginBtn.classList.remove('loading');
           loginBtn.disabled = false;
 
-          errorText.textContent = err.message || 'Kullanıcı adı veya şifre hatalı!';
-          errorMsg.classList.add('show');
+          // SweetAlert Hata Mesajı
+          Swal.fire({
+              icon: 'error',
+              title: 'Giriş Hatası',
+              text: err.message || 'Kullanıcı adı veya şifre hatalı!',
+              confirmButtonColor: '#0d6efd'
+          });
 
-          // Shake animation
-          document.querySelector('.login-card').style.animation = 'shake 0.5s';
-          setTimeout(() => {
-              document.querySelector('.login-card').style.animation = '';
-          }, 500);
+          // Kart titreme animasyonu (CSS'teki shake'i tetikler)
+          const card = document.querySelector('.login-card');
+          card.style.animation = 'none';
+          card.offsetHeight; // trigger reflow
+          card.style.animation = 'shake 0.5s';
       });
   });
-
-  // Clear error on input
-  document.getElementById('username').addEventListener('input', function() {
-      document.getElementById('msg').classList.remove('show');
-  });
-
-  document.getElementById('password').addEventListener('input', function() {
-      document.getElementById('msg').classList.remove('show');
-  });
 </script>
-
 </body>
 </html>

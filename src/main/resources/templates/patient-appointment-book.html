@@ -296,7 +296,6 @@
     <div class="card-body-custom">
       <form action="/patients/appointments/book" method="post">
 
-        <!-- 0. Hasta Seçimi (Sadece Sekreter İçin) -->
         <div th:if="${session.userType == 'SECRETARY'}" class="step-section">
           <label class="step-label">
             <span class="step-number">0</span>
@@ -316,7 +315,6 @@
           </div>
         </div>
 
-        <!-- 1. Poliklinik Seçimi -->
         <div class="step-section">
           <label class="step-label">
             <span class="step-number">1</span>
@@ -329,7 +327,6 @@
           </select>
         </div>
 
-        <!-- 2. Doktor Seçimi -->
         <div id="doctorArea" class="step-section d-none">
           <label class="step-label">
             <span class="step-number">2</span>
@@ -345,7 +342,6 @@
           </select>
         </div>
 
-        <!-- 3. Tarih Seçimi -->
         <div id="dayArea" class="step-section d-none">
           <label class="step-label">
             <span class="step-number">3</span>
@@ -356,7 +352,6 @@
           <input type="hidden" id="selectedDate">
         </div>
 
-        <!-- 4. Saat Seçimi -->
         <div id="timeArea" class="step-section d-none">
           <label class="step-label">
             <span class="step-number">4</span>
@@ -371,7 +366,6 @@
           </div>
         </div>
 
-        <!-- Submit Butonu -->
         <div class="d-grid mt-4">
           <button type="submit" id="submitBtn" class="btn-submit" disabled>
             <i class="fas fa-check-circle me-2"></i>

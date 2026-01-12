@@ -444,7 +444,6 @@
 </head>
 <body>
 
-<!-- Emergency Header -->
 <div class="emergency-header">
   <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-start">
@@ -472,13 +471,11 @@
   </div>
 </div>
 
-<!-- Empty State -->
 <div th:if="${#lists.isEmpty(triageRecords)}" class="empty-state">
   <i class="fas fa-check-circle"></i>
   <h5>Şu an görüntülenecek hasta bulunmamaktadır</h5>
 </div>
 
-<!-- Triage Cards Grid -->
 <div class="triage-grid">
   <div class="triage-card"
        th:each="t, iterStat : ${triageRecords}"
@@ -488,7 +485,6 @@
     <div class="priority-bar"></div>
 
     <div class="card-content">
-      <!-- Status Badge -->
       <div class="status-badge">
                 <span th:if="${t.status == 'TREATED'}" class="badge-treated">
                     <i class="fas fa-check-double me-1"></i>
@@ -500,7 +496,6 @@
                 </span>
       </div>
 
-      <!-- Patient Info -->
       <div class="patient-info">
         <div class="patient-name" th:text="${t.patient.firstName + ' ' + t.patient.lastName}">
           Hasta Adı
@@ -511,7 +506,6 @@
         </div>
       </div>
 
-      <!-- Vitals -->
       <div class="vitals-grid">
         <div class="vital-box">
           <span class="vital-value temperature" th:text="${(t.temperature ?: '0') + '°'}">36.5°</span>
@@ -530,7 +524,6 @@
         </div>
       </div>
 
-      <!-- Symptoms -->
       <div class="symptoms-box">
         <div class="symptoms-label">
           <i class="fas fa-notes-medical me-2"></i>Şikayet
@@ -540,7 +533,6 @@
         </div>
       </div>
 
-      <!-- Action Buttons -->
       <div class="action-buttons">
         <button th:if="${session.userType == 'DOCTOR'}"
                 class="btn-action btn-prescription"
@@ -566,7 +558,6 @@
         </a>
       </div>
 
-      <!-- Time Footer -->
       <div class="time-footer">
         <i class="far fa-clock me-1"></i>
         Giriş: <span th:text="${#temporals.format(t.triageDate, 'HH:mm')}"></span>
@@ -575,7 +566,6 @@
   </div>
 </div>
 
-<!-- Triaj Reçete Modal -->
 <div class="modal fade" id="triagePrescriptionModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">

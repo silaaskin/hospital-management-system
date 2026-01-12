@@ -1,4 +1,3 @@
--- 1. Randevu Ekleme Logu
 DROP TRIGGER IF EXISTS trg_after_appointment_insert //
 CREATE TRIGGER trg_after_appointment_insert
     AFTER INSERT ON appointments
@@ -8,7 +7,6 @@ BEGIN
     VALUES (NEW.id, 'INSERT', CONCAT('Yeni randevu oluşturuldu. Hasta ID: ', NEW.patient_id));
 END //
 
--- 2. Muayene Tamamlama Logu
 DROP TRIGGER IF EXISTS trg_before_appointment_status_update //
 CREATE TRIGGER trg_before_appointment_status_update
     BEFORE UPDATE ON appointments
@@ -19,7 +17,6 @@ BEGIN
 END IF;
 END //
 
--- 3. Tarih Değişikliği Logu
 DROP TRIGGER IF EXISTS trg_before_appointment_data_change //
 CREATE TRIGGER trg_before_appointment_data_change
     BEFORE UPDATE ON appointments
@@ -31,7 +28,6 @@ BEGIN
 END IF;
 END //
 
--- 4. Silme Logu
 DROP TRIGGER IF EXISTS trg_after_appointment_delete //
 CREATE TRIGGER trg_after_appointment_delete
     AFTER DELETE ON appointments

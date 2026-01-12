@@ -25,8 +25,6 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void loadDoctors() {
-        // [Ad, Soyad, Uzmanlık, Departman, Username]
-        // Not: phone alanı hem modelden hem DB'den silindiği için veri setinde yer almıyor.
         String[][] doctorsData = {
                 {"Mehmet", "Öz", "Kardiyoloji", "Kalp Sağlığı", "doktor1"},
                 {"Canan", "Karatay", "Dahiliye", "İç Hastalıkları", "doktor2"},

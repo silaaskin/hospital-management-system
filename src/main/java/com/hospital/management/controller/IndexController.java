@@ -8,13 +8,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class IndexController {
 
-    // 1. Ana sayfaya geleni SEÇİM EKRANINA yolla
     @GetMapping("/")
     public String index() {
         return "login-selection"; // templates/login-selection.html
     }
 
-    // 2. Dashboard'a gitmek isteyeni KONTROL ET ve YÖNLENDİR
     @GetMapping("/dashboard")
     public String showDashboard(HttpSession session, Model model) {
         String userType = (String) session.getAttribute("userType");
@@ -35,7 +33,6 @@ public class IndexController {
         return "redirect:/";
     }
 
-    // 3. Çıkış Yap (Oturumu Siler)
     @GetMapping("/logout")
     public String logout(HttpSession session) {
         session.invalidate();

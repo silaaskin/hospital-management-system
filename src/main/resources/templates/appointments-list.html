@@ -6,6 +6,7 @@
     <title>Randevu Yönetimi - MHRS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
             --mhrs-primary: #0d6efd;
@@ -823,6 +824,7 @@
         modal.show();
     }
 
+    // MODERNIZE EDİLEN ONAY FONKSİYONU
     function confirmComplete() {
         fetch('/appointments/api/' + currentAppointmentId + '/complete', {
             method: 'PUT',
@@ -832,10 +834,18 @@
         .then(data => {
             if (data.success) {
                 bootstrap.Modal.getInstance(document.getElementById('completeModal')).hide();
-                alert('✅ Muayene tamamlandı!');
+                // SweetAlert Başarı Mesajı
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Tamamlandı!',
+                    text: 'Muayene başarıyla sonuçlandırıldı.',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
                 loadAppointments();
             } else {
-                alert('❌ Hata: ' + (data.error || 'Bilinmeyen hata'));
+                // SweetAlert Hata Mesajı
+                Swal.fire('Hata!', data.error || 'Bilinmeyen hata', 'error');
             }
         });
     }
@@ -850,6 +860,7 @@
         modal.show();
     }
 
+    // MODERNIZE EDİLEN REÇETE KAYIT FONKSİYONU
     function savePrescription() {
         const text = document.getElementById('prescriptionText').value.trim();
         const notes = document.getElementById('prescriptionNotes').value.trim();
@@ -876,18 +887,23 @@
         .then(data => {
             if (data.success) {
                 bootstrap.Modal.getInstance(document.getElementById('prescriptionModal')).hide();
-                alert('✅ Reçete başarıyla kaydedildi!');
+                // SweetAlert Başarı Mesajı
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Reçete Hazır!',
+                    text: 'Reçete başarıyla sisteme kaydedildi.',
+                    confirmButtonColor: '#17a2b8'
+                });
                 loadAppointments();
             } else {
                 throw new Error(data.error || 'Bilinmeyen hata');
             }
         })
         .catch(err => {
-            errorDiv.textContent = 'Hata: ' + err.message;
-            errorDiv.classList.remove('d-none');
+            // SweetAlert Hata Mesajı
+            Swal.fire('Hata!', err.message, 'error');
         });
     }
 </script>
-
 </body>
 </html>

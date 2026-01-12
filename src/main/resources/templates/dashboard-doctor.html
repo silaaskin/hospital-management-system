@@ -6,6 +6,7 @@
   <title>Doktor Paneli - MHRS</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     :root {
         --mhrs-primary: #0d6efd;
@@ -442,25 +443,61 @@
     </div> </div> </div> <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+      // Veri yüklenirken kısa bir "..." veya "Yükleniyor" görseli için başlangıç
       fetch('/appointments/api/doctor-stats')
           .then(res => {
-              if (!res.ok) throw new Error("Veri çekilemedi");
+              if (!res.ok) throw new Error("İstatistik bilgileri sunucudan alınamadı.");
               return res.json();
           })
           .then(data => {
-              // Rakamları HTML'e basıyoruz
+              // Veritabanındaki GetDoctorDashboardStats prosedüründen gelen rakamlar
               document.getElementById('todayStat').innerText = data.todayCount || "0";
               document.getElementById('pendingStat').innerText = data.pendingCount || "0";
+
               if(document.getElementById('tomorrowStat')) {
                   document.getElementById('tomorrowStat').innerText = data.tomorrowCount || "0";
               }
           })
           .catch(err => {
-              console.error('Hata:', err);
-              // Hata durumunda 0 gösteriyoruz
+              console.error('İstatistik Hatası:', err);
+
+              // Localhost mesajı yerine şık bir SweetAlert hatası
+              Swal.fire({
+                  icon: 'error',
+                  title: 'Veri Yükleme Hatası',
+                  text: 'Dashboard istatistikleri güncellenemedi. Lütfen sayfayı yenileyiniz.',
+                  confirmButtonColor: '#0d6efd',
+                  confirmButtonText: 'Tamam'
+              });
+
+              // Hata durumunda varsayılan olarak 0 gösteriyoruz
               document.getElementById('todayStat').innerText = "0";
               document.getElementById('pendingStat').innerText = "0";
           });
+
+      // Güvenli Çıkış Butonu için Onay Kutusu Ekleme
+      const logoutBtn = document.querySelector('.logout-btn');
+      if(logoutBtn) {
+          logoutBtn.addEventListener('click', function(e) {
+              e.preventDefault();
+              const logoutUrl = this.getAttribute('href');
+
+              Swal.fire({
+                  title: 'Çıkış Yapılıyor',
+                  text: "Oturumunuzu sonlandırmak istediğinize emin misiniz?",
+                  icon: 'question',
+                  showCancelButton: true,
+                  confirmButtonColor: '#dc3545',
+                  cancelButtonColor: '#6c757d',
+                  confirmButtonText: 'Evet, Çıkış Yap',
+                  cancelButtonText: 'Vazgeç'
+              }).then((result) => {
+                  if (result.isConfirmed) {
+                      window.location.href = logoutUrl;
+                  }
+              });
+          });
+      }
   });
 </script>
 </body>
