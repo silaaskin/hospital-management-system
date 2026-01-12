@@ -301,10 +301,6 @@
              th:style="'animation-delay: ' + ${iterStat.index * 0.1} + 's'">
 
           <div class="card-header-prescription">
-                        <span class="prescription-badge">
-                            <i class="fas fa-file-prescription me-1"></i>
-                            Reçete #<span th:text="${item.id}"></span>
-                        </span>
             <span class="prescription-date">
                             <i class="far fa-calendar-alt me-1"></i>
                             <span th:text="${#temporals.format(item.createdDate, 'dd.MM.yyyy HH:mm')}"></span>
