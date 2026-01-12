@@ -14,27 +14,22 @@ public class DoctorService {
     @Autowired
     private DoctorRepository doctorRepository;
 
-    // Tüm doktorları listele
     public List<Doctor> getAllDoctors() {
         return doctorRepository.findAll();
     }
 
-    // ID'ye göre doktor bul
     public Optional<Doctor> getDoctorById(Long id) {
         return doctorRepository.findById(id);
     }
 
-    // Uzmanlık alanına göre doktorları listele
     public List<Doctor> getDoctorsBySpecialization(String specialization) {
         return doctorRepository.findBySpecialization(specialization);
     }
 
-    // Departmana göre doktorları listele
     public List<Doctor> getDoctorsByDepartment(String department) {
         return doctorRepository.findByDepartment(department);
     }
 
-    // Yeni doktor kaydet
     public Doctor saveDoctor(Doctor doctor) {
         if (doctor.getUsername() != null && doctorRepository.existsByUsername(doctor.getUsername())) {
             if (doctor.getId() == null) {
@@ -48,7 +43,6 @@ public class DoctorService {
         return doctorRepository.save(doctor);
     }
 
-    // Doktor güncelle
     public Doctor updateDoctor(Long id, Doctor doctorDetails) {
         Doctor doctor = doctorRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Doktor bulunamadı! ID: " + id));
@@ -59,7 +53,6 @@ public class DoctorService {
         doctor.setDepartment(doctorDetails.getDepartment());
         doctor.setUsername(doctorDetails.getUsername());
 
-        // Şifre sadece dolu gönderildiyse güncelle
         if (doctorDetails.getPassword() != null && !doctorDetails.getPassword().isEmpty()) {
             doctor.setPassword(doctorDetails.getPassword());
         }
@@ -67,14 +60,12 @@ public class DoctorService {
         return doctorRepository.save(doctor);
     }
 
-    // Doktor sil
     public void deleteDoctor(Long id) {
         Doctor doctor = doctorRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Doktor bulunamadı! ID: " + id));
         doctorRepository.delete(doctor);
     }
 
-    // Doktor girişi
     public Optional<Doctor> login(String username, String password) {
         Optional<Doctor> doctor = doctorRepository.findByUsername(username);
         if (doctor.isPresent() && doctor.get().getPassword().equals(password)) {

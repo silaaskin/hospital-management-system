@@ -86,7 +86,6 @@ public class AppointmentService {
         return appointmentRepository.findUpcomingAppointmentsByPatient(patient, LocalDateTime.now());
     }
 
-    // DÜZELTİLDİ: Çakışma Kontrolü İyileştirildi
     public Appointment createAppointment(Long patientId, Long doctorId, LocalDateTime appointmentDate) {
         System.out.println("=== YENİ RANDEVU OLUŞTURULUYOR ===");
         System.out.println("Patient ID: " + patientId);
@@ -103,18 +102,15 @@ public class AppointmentService {
         Patient patient = patientService.getPatientById(patientId)
                 .orElseThrow(() -> new RuntimeException("Hasta bulunamadı!"));
 
-        // DÜZELTİLDİ: 30 dakikalık çakışma kontrolü
         LocalDateTime startRange = appointmentDate.minusMinutes(29);
         LocalDateTime endRange = appointmentDate.plusMinutes(29);
 
         System.out.println("Çakışma kontrolü yapılıyor...");
         System.out.println("Kontrol aralığı: " + startRange + " - " + endRange);
 
-        // Doktorun bu zaman dilimindeki SCHEDULED randevularını kontrol et
         List<Appointment> conflicts = appointmentRepository.findByDoctorAndAppointmentDateBetween(
                 doctor, startRange, endRange);
 
-        // Sadece SCHEDULED olanları filtrele
         conflicts = conflicts.stream()
                 .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED)
                 .toList();

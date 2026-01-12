@@ -10,7 +10,7 @@ public class IndexController {
 
     @GetMapping("/")
     public String index() {
-        return "login-selection"; // templates/login-selection.html
+        return "login-selection";
     }
 
     @GetMapping("/dashboard")
@@ -26,7 +26,7 @@ public class IndexController {
             return "dashboard-doctor";
         } else if ("PATIENT".equals(userType)) {
             return "dashboard-patient";
-        } else if ("SECRETARY".equals(userType)) { // YENİ EKLENEN KISIM
+        } else if ("SECRETARY".equals(userType)) {
             return "dashboard-secretary";
         }
 

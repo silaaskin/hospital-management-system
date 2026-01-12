@@ -35,7 +35,6 @@ public class PatientService {
     }
 
     public Patient savePatient(Patient patient) {
-        // 1. Telefon Numarası Kontrolü (Tam 10 hane zorunluluğu)
         if (patient.getPhone() == null || patient.getPhone().trim().isEmpty()) {
             throw new RuntimeException("Telefon numarası boş bırakılamaz!");
         }
@@ -46,17 +45,14 @@ public class PatientService {
         }
         patient.setPhone(cleanPhone);
 
-        // 2. Mail Kontrolü
         if (patient.getEmail() == null || patient.getEmail().trim().isEmpty()) {
             throw new RuntimeException("E-posta adresi boş bırakılamaz!");
         }
 
-        // 3. Kan Grubu Kontrolü
         if (patient.getBloodType() == null || patient.getBloodType().trim().isEmpty()) {
             throw new RuntimeException("Kan grubu seçimi zorunludur!");
         }
 
-        // 4. Mükerrer TC Kontrolü
         if (patient.getId() == null && patientRepository.existsByTcNo(patient.getTcNo())) {
             throw new RuntimeException("Bu TC Kimlik numarası zaten kayıtlı!");
         }
@@ -68,19 +64,16 @@ public class PatientService {
         Patient patient = patientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Hasta bulunamadı ID: " + id));
 
-        // Temel bilgileri güncelle
         patient.setFirstName(patientDetails.getFirstName());
         patient.setLastName(patientDetails.getLastName());
         patient.setPhone(patientDetails.getPhone());
         patient.setTcNo(patientDetails.getTcNo());
         patient.setAddress(patientDetails.getAddress());
 
-        // Opsiyonel alanları kontrol ederek güncelle (null gelirse mevcut değeri koru)
         if (patientDetails.getEmail() != null) patient.setEmail(patientDetails.getEmail());
         if (patientDetails.getBloodType() != null) patient.setBloodType(patientDetails.getBloodType());
         if (patientDetails.getBirthDate() != null) patient.setBirthDate(patientDetails.getBirthDate());
 
-        // Şifre güncellenmek istenmiyorsa mevcut şifreyi kesinlikle koruyoruz
         if (patientDetails.getPassword() != null && !patientDetails.getPassword().isEmpty()) {
             patient.setPassword(patientDetails.getPassword());
         }

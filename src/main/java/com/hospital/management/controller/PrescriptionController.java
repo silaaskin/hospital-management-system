@@ -133,7 +133,6 @@ public class PrescriptionController {
         }
     }
 
-    // DÜZELTİLDİ: Triaj reçetesi için detaylı hata kontrolü
     @PostMapping("/api/triage")
     @ResponseBody
     public ResponseEntity<?> createTriagePrescription(@RequestBody Map<String, Object> data) {

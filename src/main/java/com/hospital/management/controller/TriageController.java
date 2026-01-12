@@ -33,7 +33,6 @@ public class TriageController {
 
         List<TriageRecord> records = triageService.getAllTriageRecordsOrderedByPriority();
 
-        // DOKTORLAR İÇİN: Sadece bekleyen hastaları filtreleme seçeneği
         if ("waiting".equals(filter)) {
             records = records.stream()
                     .filter(r -> "WAITING".equals(r.getStatus()) || r.getStatus() == null)

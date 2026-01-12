@@ -22,12 +22,9 @@ public class Secretary {
     @Column(nullable = false)
     private String password;
 
-    // Boş Constructor (Hibernate için gereklidir)
     public Secretary() {
     }
-
-    // --- Getter ve Setter Metotları ---
-
+    
     public Long getId() {
         return id;
     }
