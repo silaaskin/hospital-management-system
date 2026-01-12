@@ -6,6 +6,7 @@ import com.hospital.management.model.Doctor;
 import com.hospital.management.model.Patient;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.query.Procedure;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -43,7 +44,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             @Param("endDate") LocalDateTime endDate,
             @Param("status") AppointmentStatus status);
 
-    // Hastanın gelecek randevularını listele (Hata aldığınız metodun karşılığı)
+    // Hastanın gelecek randevularını listele
     @Query("SELECT a FROM Appointment a WHERE a.patient = :patient " +
             "AND a.appointmentDate > :currentDate " +
             "AND a.status = 'SCHEDULED' " +
@@ -69,4 +70,14 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     // Belirli bir tarihteki randevuları getir
     List<Appointment> findByAppointmentDateBetweenAndStatus(LocalDateTime start, LocalDateTime end, AppointmentStatus status);
+
+    // --- PROCEDURE YETENEKLERİ ---
+
+    // Bir hastanın bekleyen randevu sayısını döndüren Procedure
+    @Procedure(procedureName = "GetPatientUpcomingAppointmentCount")
+    Integer getPatientUpcomingAppointmentCount(@Param("p_tc") String tcNo);
+
+    // Bir hastanın tüm randevu detaylarını listeleyen Procedure
+    @Procedure(procedureName = "GetPatientAppointments")
+    List<Object[]> getPatientAppointments(@Param("p_patient_id") Long patientId);
 }
