@@ -232,4 +232,29 @@ public class PatientController {
         patientService.getPatientById(id).ifPresent(p -> model.addAttribute("patient", p));
         return "patient-edit";
     }
+    @PutMapping("/api/{id}")    @ResponseBody
+    public ResponseEntity<?> updatePatient(@PathVariable Long id, @RequestBody Patient patientDetails) {
+        try {
+            Optional<Patient> patientOpt = patientService.getPatientById(id);
+            if (patientOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Hasta bulunamadı!");
+            }
+
+            Patient patient = patientOpt.get();
+
+            patient.setFirstName(patientDetails.getFirstName());
+            patient.setLastName(patientDetails.getLastName());
+            patient.setTcNo(patientDetails.getTcNo());
+            patient.setPhone(patientDetails.getPhone());
+            patient.setEmail(patientDetails.getEmail());
+            patient.setBloodType(patientDetails.getBloodType()); // setBloodGroup yerine setBloodType
+            patient.setAddress(patientDetails.getAddress());
+
+            patientService.savePatient(patient);
+
+            return ResponseEntity.ok(Map.of("success", true, "message", "Güncelleme başarılı"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Hata: " + e.getMessage());
+        }
+    }
 }

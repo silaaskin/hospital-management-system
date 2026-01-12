@@ -239,58 +239,45 @@
 </div>
 
 <script>
-  // TC ve Telefon sadece rakam
-  document.getElementById('tcNo').addEventListener('input', function(e) {
-      this.value = this.value.replace(/[^0-9]/g, '');
-  });
-
-  document.getElementById('phone').addEventListener('input', function(e) {
-      this.value = this.value.replace(/[^0-9]/g, '');
-  });
-
   document.getElementById('editForm').addEventListener('submit', function(e) {
-      e.preventDefault();
+    e.preventDefault();
 
-      const id = document.getElementById('patientId').value;
-      const updateBtn = document.getElementById('updateBtn');
+    const id = document.getElementById('patientId').value;
+    const updateBtn = document.getElementById('updateBtn');
 
-      updateBtn.classList.add('loading');
-      updateBtn.disabled = true;
+    updateBtn.disabled = true;
 
-      const data = {
-          firstName: document.getElementById('firstName').value.trim(),
-          lastName: document.getElementById('lastName').value.trim(),
-          tcNo: document.getElementById('tcNo').value.trim(),
-          phone: document.getElementById('phone').value.trim(),
-          email: document.getElementById('email').value.trim() || null,
-          bloodType: document.getElementById('bloodType').value || null,
-          address: document.getElementById('address').value.trim() || null
-      };
+    const data = {
+        firstName: document.getElementById('firstName').value.trim(),
+        lastName: document.getElementById('lastName').value.trim(),
+        tcNo: document.getElementById('tcNo').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        email: document.getElementById('email')?.value.trim() || null,
+        bloodType: document.getElementById('bloodType')?.value || null, // Java'daki isimle aynı
+        address: document.getElementById('address')?.value.trim() || null
+    };
 
-      fetch('/patients/api/' + id, {
-          method: 'PUT',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(data)
-      })
-      .then(res => {
-          if(res.ok) {
-              updateBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i> Başarılı!';
-              updateBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
-
-              setTimeout(() => {
-                  alert("✅ Güncelleme Başarılı!");
-                  window.location.href = "/patients/view/" + id;
-              }, 500);
-          } else {
-              throw new Error('Güncelleme başarısız!');
-          }
-      })
-      .catch(err => {
-          updateBtn.classList.remove('loading');
-          updateBtn.disabled = false;
-          alert("❌ Hata: " + err.message);
-      });
-  });
+    // Java'daki @PutMapping ile eşleşen 'PUT' isteği
+    fetch('/patients/api/' + id, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(async res => {
+        if(res.ok) {
+            alert("✅ Güncelleme Başarılı!");
+            window.location.href = "/patients/view/" + id;
+        } else {
+            const errorText = await res.text();
+            alert("❌ Hata: " + errorText);
+            updateBtn.disabled = false;
+        }
+    })
+    .catch(err => {
+        alert("❌ Sistem Hatası: " + err.message);
+        updateBtn.disabled = false;
+    });
+});
 </script>
 
 </body>

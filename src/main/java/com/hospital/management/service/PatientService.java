@@ -68,18 +68,22 @@ public class PatientService {
         Patient patient = patientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Hasta bulunamadı ID: " + id));
 
+        // Temel bilgileri güncelle
         patient.setFirstName(patientDetails.getFirstName());
         patient.setLastName(patientDetails.getLastName());
-
-        String cleanPhone = patientDetails.getPhone().replaceAll("\\D", "");
-        if (cleanPhone.length() != 10) {
-            throw new RuntimeException("Güncelleme hatası: Telefon 10 hane olmalıdır!");
-        }
-        patient.setPhone(cleanPhone);
-
+        patient.setPhone(patientDetails.getPhone());
         patient.setTcNo(patientDetails.getTcNo());
-        patient.setEmail(patientDetails.getEmail());
-        patient.setBloodType(patientDetails.getBloodType());
+        patient.setAddress(patientDetails.getAddress());
+
+        // Opsiyonel alanları kontrol ederek güncelle (null gelirse mevcut değeri koru)
+        if (patientDetails.getEmail() != null) patient.setEmail(patientDetails.getEmail());
+        if (patientDetails.getBloodType() != null) patient.setBloodType(patientDetails.getBloodType());
+        if (patientDetails.getBirthDate() != null) patient.setBirthDate(patientDetails.getBirthDate());
+
+        // Şifre güncellenmek istenmiyorsa mevcut şifreyi kesinlikle koruyoruz
+        if (patientDetails.getPassword() != null && !patientDetails.getPassword().isEmpty()) {
+            patient.setPassword(patientDetails.getPassword());
+        }
 
         return patientRepository.save(patient);
     }

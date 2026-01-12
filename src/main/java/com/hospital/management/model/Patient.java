@@ -22,7 +22,6 @@ public class Patient {
     @Column(unique = true, nullable = false, length = 11)
     private String tcNo;
 
-    // YENİ EKLENEN ALAN: ŞİFRE
     private String password;
 
     private LocalDate birthDate;
@@ -85,7 +84,6 @@ public class Patient {
         this.tcNo = tcNo;
     }
 
-    // YENİ EKLENEN GETTER/SETTER
     public String getPassword() {
         return password;
     }
