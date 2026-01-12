@@ -59,16 +59,36 @@ public class TriageService {
 
     private TriagePriority calculatePriority(TriageRecord record) {
         int score = 0;
+
+        // 1. Ateş Kontrolü
         if (record.getTemperature() != null) {
-            if (record.getTemperature() >= 39.5) score += 3;
+            if (record.getTemperature() >= 39.5 || record.getTemperature() <= 35.0) score += 4;
             else if (record.getTemperature() >= 38.5) score += 2;
             else if (record.getTemperature() >= 37.5) score += 1;
         }
+
+        // 2. Nabız Kontrolü
         if (record.getHeartRate() != null) {
-            if (record.getHeartRate() >= 120 || record.getHeartRate() <= 50) score += 3;
-            else if (record.getHeartRate() >= 100 || record.getHeartRate() <= 60) score += 2;
+            if (record.getHeartRate() >= 130 || record.getHeartRate() <= 40) score += 4;
+            else if (record.getHeartRate() >= 110 || record.getHeartRate() <= 50) score += 2;
+            else if (record.getHeartRate() >= 100) score += 1;
         }
-        if (score >= 9) return TriagePriority.CRITICAL;
+
+        // 3. Büyük Tansiyon (Sistolik) Kontrolü
+        if (record.getBloodPressureSystolic() != null) {
+            if (record.getBloodPressureSystolic() >= 180 || record.getBloodPressureSystolic() <= 80) score += 4;
+            else if (record.getBloodPressureSystolic() >= 160 || record.getBloodPressureSystolic() <= 90) score += 2;
+            else if (record.getBloodPressureSystolic() >= 140) score += 1;
+        }
+
+        // 4. Küçük Tansiyon (Diyastolik) Kontrolü
+        if (record.getBloodPressureDiastolic() != null) {
+            if (record.getBloodPressureDiastolic() >= 110 || record.getBloodPressureDiastolic() <= 50) score += 3;
+            else if (record.getBloodPressureDiastolic() >= 100) score += 1;
+        }
+
+        // Toplam Puana Göre Öncelik Belirleme
+        if (score >= 10) return TriagePriority.CRITICAL;
         else if (score >= 6) return TriagePriority.URGENT;
         else if (score >= 3) return TriagePriority.SEMI_URGENT;
         else return TriagePriority.NON_URGENT;

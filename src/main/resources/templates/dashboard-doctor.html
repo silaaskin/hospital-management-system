@@ -2,26 +2,440 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
-  <title>Doktor Paneli</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doktor Paneli - MHRS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; padding: 20px; text-align: center; }
-    .container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; max-width: 800px; margin: 40px auto; }
-    .card { padding: 30px; border-radius: 10px; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-decoration: none; color: #333; font-size: 1.2rem; transition: 0.3s; border-left: 5px solid #007bff; }
-    .card:hover { transform: translateY(-5px); background: #007bff; color: white; }
-    .logout { color: #dc3545; text-decoration: none; font-weight: bold; margin-top: 20px; display: inline-block; }
+    :root {
+        --mhrs-primary: #0d6efd;
+        --mhrs-success: #28a745;
+        --mhrs-info: #17a2b8;
+        --mhrs-danger: #dc3545;
+        --mhrs-warning: #ffc107;
+        --mhrs-purple: #6f42c1;
+        --mhrs-teal: #20c997;
+    }
+
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        padding: 0;
+        margin: 0;
+    }
+
+    .dashboard-wrapper {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Header Section */
+    .dashboard-header {
+        background: white;
+        padding: 30px 0;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        margin-bottom: 40px;
+    }
+
+    .welcome-section {
+        text-align: center;
+        position: relative;
+    }
+
+    .welcome-title {
+        color: var(--mhrs-primary);
+        font-size: 32px;
+        font-weight: 800;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .doctor-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, var(--mhrs-primary) 0%, var(--mhrs-info) 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 28px;
+        box-shadow: 0 4px 15px rgba(13,110,253,0.3);
+    }
+
+    .welcome-subtitle {
+        color: #6c757d;
+        font-size: 18px;
+        font-weight: 500;
+        margin: 0;
+    }
+
+    /* Main Content */
+    .main-content {
+        flex: 1;
+        padding-bottom: 60px;
+    }
+
+    .cards-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 30px;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    /* MHRS Style Menu Cards */
+    .menu-card {
+        background: white;
+        border-radius: 20px;
+        padding: 0;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        overflow: hidden;
+        border: none;
+        display: flex;
+        flex-direction: column;
+        min-height: 220px;
+    }
+
+    .menu-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        text-decoration: none;
+    }
+
+    .card-header-section {
+        padding: 30px 25px 20px;
+        background: white;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .card-header-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+    }
+
+    .menu-card.primary .card-header-section::before {
+        background: linear-gradient(90deg, var(--mhrs-primary) 0%, var(--mhrs-info) 100%);
+    }
+
+    .menu-card.success .card-header-section::before {
+        background: linear-gradient(90deg, var(--mhrs-success) 0%, var(--mhrs-teal) 100%);
+    }
+
+    .menu-card.info .card-header-section::before {
+        background: linear-gradient(90deg, var(--mhrs-info) 0%, var(--mhrs-teal) 100%);
+    }
+
+    .menu-card.danger .card-header-section::before {
+        background: linear-gradient(90deg, var(--mhrs-danger) 0%, #e74c3c 100%);
+    }
+
+    .card-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        color: white;
+        margin: 0 auto 20px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+
+    .menu-card.primary .card-icon {
+        background: linear-gradient(135deg, var(--mhrs-primary) 0%, var(--mhrs-info) 100%);
+    }
+
+    .menu-card.success .card-icon {
+        background: linear-gradient(135deg, var(--mhrs-success) 0%, var(--mhrs-teal) 100%);
+    }
+
+    .menu-card.info .card-icon {
+        background: linear-gradient(135deg, var(--mhrs-info) 0%, var(--mhrs-teal) 100%);
+    }
+
+    .menu-card.danger .card-icon {
+        background: linear-gradient(135deg, var(--mhrs-danger) 0%, #e74c3c 100%);
+    }
+
+    .card-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #2c3e50;
+        text-align: center;
+        margin: 0;
+    }
+
+    .card-description {
+        font-size: 14px;
+        color: #6c757d;
+        text-align: center;
+        margin-top: 10px;
+        padding: 0 15px;
+        line-height: 1.6;
+    }
+
+    .card-footer-section {
+        margin-top: auto;
+        padding: 15px 25px;
+        background: #f8f9fa;
+        text-align: center;
+        font-size: 13px;
+        color: var(--mhrs-primary);
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .menu-card:hover .card-footer-section {
+        background: linear-gradient(135deg, var(--mhrs-primary) 0%, var(--mhrs-info) 100%);
+        color: white;
+    }
+
+    /* Logout Section */
+    .logout-section {
+        text-align: center;
+        margin-top: 50px;
+        padding: 20px;
+    }
+
+    .logout-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 15px 40px;
+        background: white;
+        color: var(--mhrs-danger);
+        text-decoration: none;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 16px;
+        box-shadow: 0 4px 15px rgba(220,53,69,0.2);
+        transition: all 0.3s;
+        border: 2px solid var(--mhrs-danger);
+    }
+
+    .logout-btn:hover {
+        background: var(--mhrs-danger);
+        color: white;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(220,53,69,0.3);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .welcome-title {
+            font-size: 24px;
+        }
+
+        .doctor-icon {
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+        }
+
+        .welcome-subtitle {
+            font-size: 16px;
+        }
+
+        .cards-container {
+            grid-template-columns: 1fr;
+            padding: 0 15px;
+            gap: 20px;
+        }
+
+        .menu-card {
+            min-height: 200px;
+        }
+
+        .card-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 28px;
+        }
+
+        .card-title {
+            font-size: 18px;
+        }
+    }
+
+    /* Animation */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .menu-card {
+        animation: fadeInUp 0.6s ease-out;
+        animation-fill-mode: both;
+    }
+
+    .menu-card:nth-child(1) { animation-delay: 0.1s; }
+    .menu-card:nth-child(2) { animation-delay: 0.2s; }
+    .menu-card:nth-child(3) { animation-delay: 0.3s; }
+    .menu-card:nth-child(4) { animation-delay: 0.4s; }
+
+    /* Quick Stats (Optional Enhancement) */
+    .quick-stats {
+        max-width: 1200px;
+        margin: 0 auto 40px;
+        padding: 0 20px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+
+    .stat-number {
+        font-size: 32px;
+        font-weight: 800;
+        color: var(--mhrs-primary);
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 14px;
+        color: #6c757d;
+        font-weight: 600;
+    }
   </style>
 </head>
 <body>
-<h1 style="color:#007bff;">Hoş Geldiniz, Dr. <span th:text="${userName}"></span></h1>
-<p>Yetkili Personel Paneli</p>
 
-<div class="container">
-  <a href="/appointments/view" class="card">📅 Randevuları Yönet</a>
-  <a href="/patients/view" class="card">👤 Hasta Kayıtları</a>
-  <a href="/prescriptions/view" class="card">💊 Yazılan Reçeteler </a>
-  <a href="/triage/view" class="card" style="border-left-color: #dc3545;">🚨 Acil / Triaj</a>
+<div class="dashboard-wrapper">
+  <!-- Header Section -->
+  <div class="dashboard-header">
+    <div class="container">
+      <div class="welcome-section">
+        <h1 class="welcome-title">
+          <div class="doctor-icon">
+            <i class="fas fa-user-md"></i>
+          </div>
+          <span>Hoş Geldiniz, Dr. <span th:text="${userName}">Doktor</span></span>
+        </h1>
+        <p class="welcome-subtitle">
+          <i class="fas fa-shield-alt me-2"></i>Yetkili Personel Paneli
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="container">
+      <!-- Menu Cards -->
+      <div class="cards-container">
+        <!-- Randevu Yönetimi -->
+        <a href="/appointments/view" class="menu-card primary">
+          <div class="card-header-section">
+            <div class="card-icon">
+              <i class="fas fa-calendar-check"></i>
+            </div>
+            <h3 class="card-title">Randevuları Yönet</h3>
+            <p class="card-description">
+              Hasta randevularını görüntüleyin, muayene tamamlayın ve reçete yazın
+            </p>
+          </div>
+          <div class="card-footer-section">
+            <span>Randevulara Git</span>
+            <i class="fas fa-arrow-right"></i>
+          </div>
+        </a>
+
+        <!-- Hasta Kayıtları -->
+        <a href="/patients/view" class="menu-card success">
+          <div class="card-header-section">
+            <div class="card-icon">
+              <i class="fas fa-users"></i>
+            </div>
+            <h3 class="card-title">Hasta Kayıtları</h3>
+            <p class="card-description">
+              Tüm hasta bilgilerini görüntüleyin ve hasta geçmişini inceleyin
+            </p>
+          </div>
+          <div class="card-footer-section">
+            <span>Hastalara Git</span>
+            <i class="fas fa-arrow-right"></i>
+          </div>
+        </a>
+
+        <!-- Reçeteler -->
+        <a href="/prescriptions/view" class="menu-card info">
+          <div class="card-header-section">
+            <div class="card-icon">
+              <i class="fas fa-prescription-bottle"></i>
+            </div>
+            <h3 class="card-title">Yazılan Reçeteler</h3>
+            <p class="card-description">
+              Yazdığınız reçeteleri görüntüleyin ve hasta tedavi sürecini takip edin
+            </p>
+          </div>
+          <div class="card-footer-section">
+            <span>Reçetelere Git</span>
+            <i class="fas fa-arrow-right"></i>
+          </div>
+        </a>
+
+        <!-- Acil / Triaj -->
+        <a href="/triage/view" class="menu-card danger">
+          <div class="card-header-section">
+            <div class="card-icon">
+              <i class="fas fa-hospital"></i>
+            </div>
+            <h3 class="card-title">Acil / Triaj</h3>
+            <p class="card-description">
+              Acil servis hastalarını öncelik sırasına göre görüntüleyin ve tedavi edin
+            </p>
+          </div>
+          <div class="card-footer-section">
+            <span>Acil Servise Git</span>
+            <i class="fas fa-arrow-right"></i>
+          </div>
+        </a>
+      </div>
+
+      <!-- Logout Section -->
+      <div class="logout-section">
+        <a href="/logout" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Güvenli Çıkış Yap</span>
+        </a>
+      </div>
+    </div>
+  </div>
 </div>
 
-<a href="/logout" class="logout">Güvenli Çıkış Yap</a>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>

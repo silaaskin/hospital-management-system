@@ -2,86 +2,390 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Hasta Detayı</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasta Detayı - MHRS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --mhrs-primary: #0d6efd;
+            --mhrs-success: #28a745;
+            --mhrs-info: #17a2b8;
+            --mhrs-danger: #dc3545;
+            --mhrs-warning: #ffc107;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 30px 15px;
+        }
+
+        .detail-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .back-btn {
+            background: white;
+            color: var(--mhrs-primary);
+            border: 2px solid white;
+            padding: 12px 25px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(255,255,255,0.3);
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255,255,255,0.4);
+            color: var(--mhrs-primary);
+            text-decoration: none;
+        }
+
+        .detail-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-header-custom {
+            background: linear-gradient(135deg, var(--mhrs-info) 0%, var(--mhrs-primary) 100%);
+            color: white;
+            padding: 25px 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-header-custom::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+
+        .card-header-custom h4 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card-body-custom {
+            padding: 40px 35px;
+        }
+
+        /* Patient Profile Section */
+        .profile-section {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .profile-icon {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, var(--mhrs-info) 0%, var(--mhrs-primary) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 8px 25px rgba(23,162,184,0.3);
+        }
+
+        .profile-icon i {
+            font-size: 60px;
+            color: white;
+        }
+
+        .patient-name {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .patient-tc {
+            display: inline-block;
+            background: var(--mhrs-primary);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* Info Table */
+        .info-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .info-table {
+            width: 100%;
+        }
+
+        .info-row {
+            display: flex;
+            padding: 15px 0;
+            border-bottom: 2px solid #dee2e6;
+            align-items: center;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            flex: 0 0 180px;
+            font-weight: 600;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-label i {
+            width: 24px;
+            text-align: center;
+            color: var(--mhrs-primary);
+        }
+
+        .info-value {
+            flex: 1;
+            font-size: 17px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            padding: 14px 30px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 15px;
+            border: none;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .btn-edit {
+            background: linear-gradient(135deg, var(--mhrs-warning) 0%, #fd7e14 100%);
+            color: white;
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, var(--mhrs-danger) 0%, #e74c3c 100%);
+            color: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .card-body-custom {
+                padding: 30px 20px;
+            }
+
+            .profile-section {
+                padding: 20px;
+            }
+
+            .profile-icon {
+                width: 100px;
+                height: 100px;
+            }
+
+            .profile-icon i {
+                font-size: 50px;
+            }
+
+            .patient-name {
+                font-size: 24px;
+            }
+
+            .info-section {
+                padding: 20px;
+            }
+
+            .info-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .info-label {
+                flex: none;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn-action {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
 </head>
-<body class="bg-light">
+<body>
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-9">
-            <a href="/patients/view" class="btn btn-outline-secondary mb-3"><i class="fas fa-arrow-left"></i> Listeye Dön</a>
+<div class="detail-container">
+    <a href="/patients/view" class="back-btn">
+        <i class="fas fa-arrow-left"></i>
+        Listeye Dön
+    </a>
 
-            <div class="card shadow">
-                <div class="card-header bg-info text-white">
-                    <h4 class="mb-0"><i class="fas fa-user-injured"></i> Hasta Kimlik Kartı</h4>
+    <div class="detail-card">
+        <div class="card-header-custom">
+            <h4>
+                <i class="fas fa-id-card me-2"></i>
+                Hasta Kimlik Kartı
+            </h4>
+        </div>
+
+        <div class="card-body-custom">
+            <!-- Profile Section -->
+            <div class="profile-section">
+                <div class="profile-icon">
+                    <i class="fas fa-user-circle"></i>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4 text-center border-end">
-                            <i class="fas fa-user-circle fa-8x text-secondary mb-3 mt-3"></i>
-                            <h3 th:text="${patient.firstName + ' ' + patient.lastName}"></h3>
-                            <span class="badge bg-primary fs-6" th:text="${'TC: ' + patient.tcNo}"></span>
+                <h3 class="patient-name" th:text="${patient.firstName + ' ' + patient.lastName}">
+                    Hasta Adı Soyadı
+                </h3>
+                <div class="patient-tc">
+                    <i class="fas fa-id-card me-2"></i>
+                    <span th:text="${'TC: ' + patient.tcNo}">TC: 12345678901</span>
+                </div>
+            </div>
+
+            <!-- Info Section -->
+            <div class="info-section">
+                <div class="info-table">
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="fas fa-phone"></i>
+                            <span>Telefon</span>
                         </div>
-                        <div class="col-md-8">
-                            <table class="table table-borderless">
-                                <tbody>
-                                <tr>
-                                    <th class="text-muted" style="width: 140px;">Telefon:</th>
-                                    <td class="fw-bold fs-5" th:text="${patient.phone}"></td>
-                                </tr>
-                                <tr>
-                                    <th class="text-muted">Doğum Tarihi:</th>
-                                    <td th:text="${patient.birthDate != null ? patient.birthDate : '-'}"></td>
-                                </tr>
-                                <tr>
-                                    <th class="text-muted">Kan Grubu:</th>
-                                    <td th:text="${patient.bloodType != null ? patient.bloodType : '-'}"></td>
-                                </tr>
-                                <tr>
-                                    <th class="text-muted">E-Posta:</th>
-                                    <td th:text="${patient.email != null ? patient.email : '-'}"></td>
-                                </tr>
-                                <tr>
-                                    <th class="text-muted">Adres:</th>
-                                    <td th:text="${patient.address != null ? patient.address : '-'}"></td>
-                                </tr>
-                                </tbody>
-                            </table>
+                        <div class="info-value" th:text="${patient.phone}">
+                            5551234567
                         </div>
                     </div>
 
-                    <hr>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="fas fa-birthday-cake"></i>
+                            <span>Doğum Tarihi</span>
+                        </div>
+                        <div class="info-value" th:text="${patient.birthDate != null ? patient.birthDate : 'Bilgi Yok'}">
+                            01.01.1990
+                        </div>
+                    </div>
 
-                    <div class="d-flex justify-content-end gap-2">
-                        <a th:href="@{/patients/edit/{id}(id=${patient.id})}" class="btn btn-warning text-white">
-                            <i class="fas fa-edit"></i> Düzenle
-                        </a>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="fas fa-tint"></i>
+                            <span>Kan Grubu</span>
+                        </div>
+                        <div class="info-value" th:text="${patient.bloodType != null ? patient.bloodType : 'Bilgi Yok'}">
+                            A Rh+
+                        </div>
+                    </div>
 
-                        <button class="btn btn-danger" th:onclick="'deletePatient(' + ${patient.id} + ')'">
-                            <i class="fas fa-trash"></i> Sil
-                        </button>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="fas fa-envelope"></i>
+                            <span>E-Posta</span>
+                        </div>
+                        <div class="info-value" th:text="${patient.email != null ? patient.email : 'Bilgi Yok'}">
+                            ornek@email.com
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>Adres</span>
+                        </div>
+                        <div class="info-value" th:text="${patient.address != null ? patient.address : 'Bilgi Yok'}">
+                            Adres bilgisi
+                        </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a th:href="@{/patients/edit/{id}(id=${patient.id})}" class="btn-action btn-edit">
+                    <i class="fas fa-edit"></i>
+                    Düzenle
+                </a>
+
+                <button class="btn-action btn-delete" th:onclick="'deletePatient(' + ${patient.id} + ')'">
+                    <i class="fas fa-trash"></i>
+                    Sil
+                </button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // Silme Fonksiyonu
     function deletePatient(id) {
-        if(confirm("Bu hasta kaydını silmek istediğinize emin misiniz?")) {
+        if(confirm("Bu hasta kaydını silmek istediğinize emin misiniz?\n\nNot: Hastanın aktif randevusu varsa silinemez.")) {
             fetch('/patients/api/' + id, {
                 method: 'DELETE'
-            }).then(response => {
+            })
+            .then(response => {
                 if(response.ok) {
-                    alert("Hasta silindi!");
-                    window.location.href = "/patients/view"; // Listeye geri at
+                    alert("✅ Hasta başarıyla silindi!");
+                    window.location.href = "/patients/view";
                 } else {
-                    alert("Silinemedi! Hastanın aktif randevusu olabilir.");
+                    return response.text().then(text => {
+                        alert("❌ Silinemedi!\n\n" + (text || "Hastanın aktif randevusu olabilir."));
+                    });
                 }
+            })
+            .catch(error => {
+                alert("❌ Bir hata oluştu: " + error.message);
             });
         }
     }

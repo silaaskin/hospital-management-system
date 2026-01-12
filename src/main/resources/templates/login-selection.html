@@ -2,25 +2,429 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Giriş Seçimi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giriş Seçimi - MHRS</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; background-color: #f0f2f5; margin: 0; }
-    .card { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; }
-    .btn { display: inline-block; padding: 15px 30px; margin: 10px; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; transition: 0.3s; }
-    .btn-doc { background-color: #007bff; }
-    .btn-pat { background-color: #28a745; }
-    .btn:hover { opacity: 0.9; transform: scale(1.05); }
+    :root {
+        --mhrs-primary: #0d6efd;
+        --mhrs-success: #28a745;
+        --mhrs-purple: #6f42c1;
+        --mhrs-info: #17a2b8;
+        --mhrs-teal: #20c997;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        overflow-x: hidden;
+    }
+
+    /* Logo Section */
+    .logo-section {
+        text-align: center;
+        margin-bottom: 40px;
+        animation: fadeInDown 0.8s ease-out;
+    }
+
+    @keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .logo-icon {
+        width: 100px;
+        height: 100px;
+        background: white;
+        border-radius: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 50px;
+        margin: 0 auto 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
+    }
+
+    .logo-icon i {
+        background: linear-gradient(135deg, var(--mhrs-primary) 0%, var(--mhrs-info) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .system-title {
+        color: white;
+        font-size: 42px;
+        font-weight: 800;
+        margin-bottom: 10px;
+        text-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .system-subtitle {
+        color: rgba(255,255,255,0.9);
+        font-size: 18px;
+        font-weight: 500;
+        letter-spacing: 1px;
+    }
+
+    /* Selection Card */
+    .selection-card {
+        background: white;
+        border-radius: 25px;
+        padding: 50px 40px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        max-width: 900px;
+        width: 100%;
+        animation: slideUp 0.8s ease-out;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .selection-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .selection-header h2 {
+        color: #2c3e50;
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+
+    .selection-header p {
+        color: #6c757d;
+        font-size: 16px;
+    }
+
+    /* Login Options Grid */
+    .login-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 25px;
+    }
+
+    .login-option {
+        text-decoration: none;
+        background: white;
+        border: 3px solid #e9ecef;
+        border-radius: 20px;
+        padding: 35px 25px;
+        text-align: center;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .login-option::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .login-option:hover::before {
+        opacity: 1;
+    }
+
+    .login-option.doctor::before {
+        background: linear-gradient(90deg, var(--mhrs-primary) 0%, var(--mhrs-info) 100%);
+    }
+
+    .login-option.patient::before {
+        background: linear-gradient(90deg, var(--mhrs-success) 0%, var(--mhrs-teal) 100%);
+    }
+
+    .login-option.secretary::before {
+        background: linear-gradient(90deg, var(--mhrs-purple) 0%, #6610f2 100%);
+    }
+
+    .login-option:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+    }
+
+    .login-option.doctor:hover {
+        border-color: var(--mhrs-primary);
+        background: linear-gradient(135deg, rgba(13,110,253,0.05) 0%, rgba(23,162,184,0.05) 100%);
+    }
+
+    .login-option.patient:hover {
+        border-color: var(--mhrs-success);
+        background: linear-gradient(135deg, rgba(40,167,69,0.05) 0%, rgba(32,201,151,0.05) 100%);
+    }
+
+    .login-option.secretary:hover {
+        border-color: var(--mhrs-purple);
+        background: linear-gradient(135deg, rgba(111,66,193,0.05) 0%, rgba(102,16,242,0.05) 100%);
+    }
+
+    .option-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 36px;
+        color: white;
+        transition: all 0.3s;
+    }
+
+    .login-option.doctor .option-icon {
+        background: linear-gradient(135deg, var(--mhrs-primary) 0%, var(--mhrs-info) 100%);
+        box-shadow: 0 8px 20px rgba(13,110,253,0.3);
+    }
+
+    .login-option.patient .option-icon {
+        background: linear-gradient(135deg, var(--mhrs-success) 0%, var(--mhrs-teal) 100%);
+        box-shadow: 0 8px 20px rgba(40,167,69,0.3);
+    }
+
+    .login-option.secretary .option-icon {
+        background: linear-gradient(135deg, var(--mhrs-purple) 0%, #6610f2 100%);
+        box-shadow: 0 8px 20px rgba(111,66,193,0.3);
+    }
+
+    .login-option:hover .option-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    .option-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 8px;
+    }
+
+    .option-description {
+        font-size: 14px;
+        color: #6c757d;
+        line-height: 1.5;
+    }
+
+    /* Footer */
+    .selection-footer {
+        text-align: center;
+        margin-top: 40px;
+        padding-top: 30px;
+        border-top: 2px solid #e9ecef;
+    }
+
+    .footer-text {
+        color: #6c757d;
+        font-size: 14px;
+        line-height: 1.8;
+    }
+
+    .footer-text i {
+        color: var(--mhrs-primary);
+        margin-right: 5px;
+    }
+
+    /* Info Banner */
+    .info-banner {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border-left: 4px solid var(--mhrs-primary);
+        padding: 20px 25px;
+        border-radius: 15px;
+        margin-top: 30px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .info-banner i {
+        font-size: 28px;
+        color: var(--mhrs-primary);
+    }
+
+    .info-banner-text {
+        flex: 1;
+    }
+
+    .info-banner-text h4 {
+        color: #2c3e50;
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .info-banner-text p {
+        color: #6c757d;
+        font-size: 14px;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .system-title {
+            font-size: 32px;
+        }
+
+        .system-subtitle {
+            font-size: 16px;
+        }
+
+        .selection-card {
+            padding: 35px 25px;
+        }
+
+        .selection-header h2 {
+            font-size: 24px;
+        }
+
+        .login-options {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .option-icon {
+            width: 70px;
+            height: 70px;
+            font-size: 32px;
+        }
+
+        .option-title {
+            font-size: 20px;
+        }
+    }
+
+    /* Animation Delays */
+    .login-option:nth-child(1) {
+        animation: slideUp 0.8s ease-out 0.1s;
+        animation-fill-mode: both;
+    }
+
+    .login-option:nth-child(2) {
+        animation: slideUp 0.8s ease-out 0.2s;
+        animation-fill-mode: both;
+    }
+
+    .login-option:nth-child(3) {
+        animation: slideUp 0.8s ease-out 0.3s;
+        animation-fill-mode: both;
+    }
   </style>
 </head>
 <body>
-<div class="card">
-  <h1>Hastane Yönetim Sistemi</h1>
-  <p>Lütfen giriş yapmak istediğiniz rolü seçin:</p>
-  <div>
-    <a href="/doctors/login" class="btn btn-doc">👨‍⚕️ Doktor Girişi</a>
-    <a href="/patients/login" class="btn btn-pat">👤 Hasta Girişi</a>
-    <a href="/secretaries/login" class="btn" style="background-color: #6f42c1; color: white;">📝 Sekreter Girişi</a>
+
+<!-- Logo Section -->
+<div class="logo-section">
+  <div class="logo-icon">
+    <i class="fas fa-hospital"></i>
+  </div>
+  <h1 class="system-title">MHRS</h1>
+  <p class="system-subtitle">Merkezi Hekim Randevu Sistemi</p>
+</div>
+
+<!-- Selection Card -->
+<div class="selection-card">
+  <div class="selection-header">
+    <h2>Hoş Geldiniz</h2>
+    <p>Giriş yapmak istediğiniz rolü seçiniz</p>
+  </div>
+
+  <div class="login-options">
+    <!-- Doctor Login -->
+    <a href="/doctors/login" class="login-option doctor">
+      <div class="option-icon">
+        <i class="fas fa-user-md"></i>
+      </div>
+      <h3 class="option-title">Doktor Girişi</h3>
+      <p class="option-description">
+        Randevularınızı yönetin, reçete yazın ve hasta kayıtlarını görüntüleyin
+      </p>
+    </a>
+
+    <!-- Patient Login -->
+    <a href="/patients/login" class="login-option patient">
+      <div class="option-icon">
+        <i class="fas fa-user-injured"></i>
+      </div>
+      <h3 class="option-title">Hasta Girişi</h3>
+      <p class="option-description">
+        Randevu alın, randevularınızı görüntüleyin ve reçetelerinize erişin
+      </p>
+    </a>
+
+    <!-- Secretary Login -->
+    <a href="/secretaries/login" class="login-option secretary">
+      <div class="option-icon">
+        <i class="fas fa-user-check"></i>
+      </div>
+      <h3 class="option-title">Sekreter Girişi</h3>
+      <p class="option-description">
+        Hasta kayıtlarını yönetin, randevu oluşturun ve acil servisi takip edin
+      </p>
+    </a>
+  </div>
+
+  <!-- Info Banner -->
+  <div class="info-banner">
+    <i class="fas fa-info-circle"></i>
+    <div class="info-banner-text">
+      <h4>Güvenli Giriş</h4>
+      <p>
+        Giriş bilgileriniz 256-bit SSL şifreleme ile korunmaktadır.
+        Şifrenizi kimseyle paylaşmayınız.
+      </p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="selection-footer">
+    <p class="footer-text">
+      <i class="fas fa-shield-alt"></i>
+      T.C. Sağlık Bakanlığı Merkezi Hekim Randevu Sistemi
+      <br>
+      <small>Tüm hakları saklıdır © 2026</small>
+    </p>
   </div>
 </div>
+
 </body>
 </html>

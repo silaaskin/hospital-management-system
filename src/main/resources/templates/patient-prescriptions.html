@@ -1,59 +1,347 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <title>Reçetelerim</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reçetelerim - MHRS</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    :root {
+        --mhrs-primary: #0d6efd;
+        --mhrs-success: #28a745;
+        --mhrs-info: #17a2b8;
+    }
+
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .main-container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        margin: 30px auto;
+        padding: 0;
+        max-width: 1400px;
+        overflow: hidden;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, var(--mhrs-success) 0%, #20c997 100%);
+        color: white;
+        padding: 30px 40px;
+        margin: 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 400px;
+        height: 400px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+    }
+
+    .page-header h3 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+        position: relative;
+        z-index: 1;
+    }
+
+    .page-header .btn {
+        position: relative;
+        z-index: 1;
+        background: rgba(255,255,255,0.2);
+        border: 2px solid rgba(255,255,255,0.5);
+        color: white;
+        font-weight: 600;
+        padding: 10px 25px;
+        border-radius: 25px;
+        transition: all 0.3s;
+    }
+
+    .page-header .btn:hover {
+        background: white;
+        color: var(--mhrs-success);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .content-wrapper {
+        padding: 40px;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border-radius: 15px;
+        border-left: 5px solid var(--mhrs-success);
+    }
+
+    .empty-state i {
+        font-size: 80px;
+        color: #856404;
+        margin-bottom: 20px;
+    }
+
+    .empty-state h5 {
+        color: #856404;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    /* Prescription Cards */
+    .prescriptions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+        gap: 25px;
+    }
+
+    .prescription-card {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        transition: all 0.3s;
+        border: 2px solid #e9ecef;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        border-left: 5px solid var(--mhrs-success);
+    }
+
+    .prescription-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+    }
+
+    .card-header-prescription {
+        background: #f8f9fa;
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    .prescription-badge {
+        background: linear-gradient(135deg, var(--mhrs-success) 0%, #20c997 100%);
+        color: white;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .prescription-date {
+        color: #6c757d;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .card-body-prescription {
+        padding: 25px 20px;
+    }
+
+    .doctor-info {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        border-left: 4px solid var(--mhrs-primary);
+    }
+
+    .doctor-info h5 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+
+    .info-block {
+        margin-bottom: 18px;
+    }
+
+    .info-label {
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 8px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .info-label i {
+        width: 24px;
+        text-align: center;
+        font-size: 16px;
+    }
+
+    .info-content {
+        background: #f8f9fa;
+        padding: 12px 15px;
+        border-radius: 8px;
+        font-size: 15px;
+        color: #2c3e50;
+        line-height: 1.6;
+    }
+
+    .note-box {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border-left: 4px solid var(--mhrs-success);
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 15px;
+    }
+
+    .note-box strong {
+        color: #856404;
+        font-size: 14px;
+    }
+
+    .note-box span {
+        color: #856404;
+        font-size: 13px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .page-header {
+            padding: 20px;
+        }
+
+        .page-header h3 {
+            font-size: 22px;
+        }
+
+        .content-wrapper {
+            padding: 20px;
+        }
+
+        .prescriptions-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Animation */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .prescription-card {
+        animation: fadeInUp 0.6s ease-out;
+        animation-fill-mode: both;
+    }
+  </style>
 </head>
-<body class="bg-light">
+<body>
 
-<div class="container mt-5">
+<div class="container-fluid">
+  <div class="main-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="d-flex justify-content-between align-items-center">
+        <h3>
+          <i class="fas fa-file-medical me-3"></i>
+          Reçetelerim
+        </h3>
+        <a href="/dashboard" class="btn">
+          <i class="fas fa-arrow-left me-2"></i>Panele Dön
+        </a>
+      </div>
+    </div>
 
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="text-primary"><i class="fas fa-file-medical"></i> Reçetelerim</h3>
-    <a href="/dashboard" class="btn btn-outline-secondary">
-      <i class="fas fa-arrow-left"></i> Panele Dön
-    </a>
-  </div>
+    <div class="content-wrapper">
+      <!-- Empty State -->
+      <div th:if="${#lists.isEmpty(prescriptionList)}" class="empty-state">
+        <i class="fas fa-file-medical"></i>
+        <h5>Henüz adınıza kayıtlı bir reçete bulunmamaktadır</h5>
+      </div>
 
-  <div th:if="${#lists.isEmpty(prescriptionList)}" class="alert alert-warning shadow-sm">
-    <i class="fas fa-info-circle"></i> Henüz adınıza kayıtlı bir reçete bulunmamaktadır.
-  </div>
+      <!-- Prescriptions Grid -->
+      <div class="prescriptions-grid">
+        <div class="prescription-card"
+             th:each="item, iterStat : ${prescriptionList}"
+             th:style="'animation-delay: ' + ${iterStat.index * 0.1} + 's'">
 
-  <div class="row">
-    <div class="col-md-6 mb-4" th:each="item : ${prescriptionList}">
-      <div class="card shadow h-100 border-0">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-          <span class="badge bg-primary">Reçete #<span th:text="${item.id}"></span></span>
-          <small class="text-muted" th:text="${#temporals.format(item.createdDate, 'dd.MM.yyyy HH:mm')}"></small>
-        </div>
+          <div class="card-header-prescription">
+                        <span class="prescription-badge">
+                            <i class="fas fa-file-prescription me-1"></i>
+                            Reçete #<span th:text="${item.id}"></span>
+                        </span>
+            <span class="prescription-date">
+                            <i class="far fa-calendar-alt me-1"></i>
+                            <span th:text="${#temporals.format(item.createdDate, 'dd.MM.yyyy HH:mm')}"></span>
+                        </span>
+          </div>
 
-        <div class="card-body">
-          <h5 class="card-title text-dark">
-            <i class="fas fa-user-md text-primary"></i>
-            Dr. <span th:text="${item.doctor.firstName + ' ' + item.doctor.lastName}"></span>
-          </h5>
+          <div class="card-body-prescription">
+            <!-- Doctor Info -->
+            <div class="doctor-info">
+              <h5>
+                <i class="fas fa-user-md me-2"></i>
+                Dr. <span th:text="${item.doctor.firstName + ' ' + item.doctor.lastName}"></span>
+              </h5>
+            </div>
 
-          <hr>
+            <!-- Prescription Content -->
+            <div class="info-block">
+              <div class="info-label">
+                <i class="fas fa-capsules text-success"></i>
+                <span>Reçete İçeriği</span>
+              </div>
+              <div class="info-content" th:text="${item.prescriptionText}">
+                İlaç bilgileri
+              </div>
+            </div>
 
-          <p class="mb-2">
-            <strong><i class="fas fa-capsules text-success"></i> Reçete İçeriği:</strong><br>
-            <span th:text="${item.prescriptionText}"></span>
-          </p>
+            <!-- Dosage -->
+            <div class="info-block" th:if="${item.dosage}">
+              <div class="info-label">
+                <i class="fas fa-prescription-bottle text-info"></i>
+                <span>Dozaj</span>
+              </div>
+              <div class="info-content" th:text="${item.dosage}">
+                Kullanım dozu
+              </div>
+            </div>
 
-          <p class="mb-2" th:if="${item.dosage}">
-            <strong><i class="fas fa-prescription-bottle"></i> Dozaj:</strong>
-            <span th:text="${item.dosage}"></span>
-          </p>
+            <!-- Instructions -->
+            <div class="info-block" th:if="${item.instructions}">
+              <div class="info-label">
+                <i class="fas fa-info-circle text-primary"></i>
+                <span>Kullanım Talimatı</span>
+              </div>
+              <div class="info-content">
+                <em th:text="${item.instructions}"></em>
+              </div>
+            </div>
 
-          <p class="mb-2" th:if="${item.instructions}">
-            <strong><i class="fas fa-info-circle"></i> Talimat:</strong>
-            <span class="fst-italic text-muted" th:text="${item.instructions}"></span>
-          </p>
-
-          <div class="alert alert-light mt-3 border p-2 small" th:if="${item.notes}">
-            <strong><i class="fas fa-sticky-note"></i> Not:</strong>
-            <span th:text="${item.notes}"></span>
+            <!-- Notes -->
+            <div class="note-box" th:if="${item.notes}">
+              <strong>
+                <i class="fas fa-sticky-note me-2"></i>
+                Doktor Notu:
+              </strong>
+              <br>
+              <span th:text="${item.notes}"></span>
+            </div>
           </div>
         </div>
       </div>

@@ -2,54 +2,298 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
-  <title>Hasta Listesi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hasta Listesi - MHRS</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body class="bg-light">
+  <style>
+    :root {
+        --mhrs-primary: #0d6efd;
+        --mhrs-success: #28a745;
+        --mhrs-info: #17a2b8;
+    }
 
-<nav class="navbar navbar-dark bg-primary mb-4 shadow">
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .navbar-custom {
+        background: linear-gradient(135deg, var(--mhrs-primary) 0%, var(--mhrs-info) 100%);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        padding: 15px 0;
+    }
+
+    .navbar-brand {
+        font-size: 22px;
+        font-weight: 700;
+        color: white !important;
+    }
+
+    .btn-outline-light-custom {
+        border: 2px solid rgba(255,255,255,0.5);
+        color: white;
+        font-weight: 600;
+        padding: 8px 20px;
+        border-radius: 20px;
+        transition: all 0.3s;
+    }
+
+    .btn-outline-light-custom:hover {
+        background: white;
+        color: var(--mhrs-primary);
+        border-color: white;
+    }
+
+    .main-container {
+        max-width: 1400px;
+        margin: 30px auto;
+        padding: 0 15px;
+    }
+
+    .list-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        overflow: hidden;
+        animation: slideUp 0.6s ease-out;
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-header-list {
+        background: white;
+        padding: 25px 30px;
+        border-bottom: 3px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .card-header-list h4 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--mhrs-primary);
+    }
+
+    .btn-add-patient {
+        background: linear-gradient(135deg, var(--mhrs-success) 0%, #20c997 100%);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 12px;
+        font-weight: 700;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(40,167,69,0.3);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-add-patient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(40,167,69,0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    .table-custom {
+        margin: 0;
+    }
+
+    .table-custom thead {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+    }
+
+    .table-custom thead th {
+        padding: 18px 20px;
+        font-weight: 700;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: none;
+    }
+
+    .table-custom tbody tr {
+        transition: all 0.3s;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .table-custom tbody tr:hover {
+        background: #f8f9fa;
+        transform: scale(1.01);
+    }
+
+    .table-custom tbody td {
+        padding: 20px;
+        vertical-align: middle;
+        font-size: 15px;
+    }
+
+    .tc-badge {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        color: white;
+        padding: 6px 15px;
+        border-radius: 15px;
+        font-size: 13px;
+        font-weight: 700;
+        display: inline-block;
+    }
+
+    .patient-name {
+        font-weight: 700;
+        color: #2c3e50;
+        font-size: 16px;
+    }
+
+    .btn-view {
+        background: linear-gradient(135deg, var(--mhrs-info) 0%, var(--mhrs-primary) 100%);
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-view:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(23,162,184,0.3);
+        color: white;
+        text-decoration: none;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+    }
+
+    .empty-state i {
+        font-size: 80px;
+        color: #dee2e6;
+        margin-bottom: 20px;
+    }
+
+    .empty-state h5 {
+        color: #6c757d;
+        font-weight: 600;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .card-header-list {
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .btn-add-patient {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .table-custom {
+            font-size: 14px;
+        }
+
+        .table-custom thead th,
+        .table-custom tbody td {
+            padding: 12px 10px;
+        }
+
+        .patient-name {
+            font-size: 14px;
+        }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-dark navbar-custom">
   <div class="container">
-    <span class="navbar-brand"><i class="fas fa-hospital"></i> Hastane Yönetim Sistemi</span>
-    <a href="/dashboard" class="btn btn-outline-light btn-sm">Panele Dön</a>
+        <span class="navbar-brand">
+            <i class="fas fa-hospital me-2"></i>
+            Hastane Yönetim Sistemi
+        </span>
+    <a href="/dashboard" class="btn-outline-light-custom">
+      <i class="fas fa-home me-2"></i>
+      Panele Dön
+    </a>
   </div>
 </nav>
 
-<div class="container">
-  <div class="card shadow-sm">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-      <h4 class="mb-0 text-primary"><i class="fas fa-users"></i> Kayıtlı Hastalar</h4>
+<div class="main-container">
+  <div class="list-card">
+    <!-- Card Header -->
+    <div class="card-header-list">
+      <h4>
+        <i class="fas fa-users me-3"></i>
+        Kayıtlı Hastalar
+      </h4>
 
-      <a href="/patients/add" class="btn btn-success" th:if="${session.userType == 'SECRETARY'}">
-        <i class="fas fa-user-plus"></i> Yeni Hasta Ekle
+      <a href="/patients/add"
+         class="btn-add-patient"
+         th:if="${session.userType == 'SECRETARY'}">
+        <i class="fas fa-user-plus"></i>
+        <span>Yeni Hasta Ekle</span>
       </a>
     </div>
 
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table table-hover table-striped mb-0 align-middle">
-          <thead class="table-dark">
-          <tr>
-            <th>TC Kimlik No</th>
-            <th>Ad Soyad</th>
-            <th>Telefon</th>
-            <th class="text-center">İşlemler</th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr th:each="p : ${patients}">
-            <td><span class="badge bg-secondary" th:text="${p.tcNo}"></span></td>
-            <td class="fw-bold" th:text="${p.firstName + ' ' + p.lastName}"></td>
-            <td th:text="${p.phone}"></td>
-            <td class="text-center">
-              <a th:href="@{/patients/view/{id}(id=${p.id})}" class="btn btn-info btn-sm text-white" title="Detay Gör">
-                <i class="fas fa-eye"></i>
-              </a>
-            </td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
+    <!-- Table -->
+    <div class="table-responsive">
+      <table class="table table-hover table-custom align-middle">
+        <thead>
+        <tr>
+          <th>TC Kimlik No</th>
+          <th>Ad Soyad</th>
+          <th>Telefon</th>
+          <th class="text-center">İşlemler</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:if="${#lists.isEmpty(patients)}">
+          <td colspan="4">
+            <div class="empty-state">
+              <i class="fas fa-user-slash"></i>
+              <h5>Kayıtlı hasta bulunmuyor</h5>
+            </div>
+          </td>
+        </tr>
+
+        <tr th:each="p : ${patients}">
+          <td>
+            <span class="tc-badge" th:text="${p.tcNo}">12345678901</span>
+          </td>
+          <td>
+                            <span class="patient-name"
+                                  th:text="${p.firstName + ' ' + p.lastName}">
+                                Hasta Adı
+                            </span>
+          </td>
+          <td th:text="${p.phone}">5551234567</td>
+          <td class="text-center">
+            <a th:href="@{/patients/view/{id}(id=${p.id})}"
+               class="btn-view">
+              <i class="fas fa-eye"></i>
+              <span>Detay</span>
+            </a>
+          </td>
+        </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>

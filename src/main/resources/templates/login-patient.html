@@ -2,65 +2,518 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Hasta Girişi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hasta Girişi - MHRS</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #e9ecef; font-family: sans-serif; }
-    .login-box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.1); width: 300px; text-align: center; }
-    input { width: 100%; padding: 10px; margin: 10px 0 5px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-    button { width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top: 15px; }
-    button:hover { background: #218838; }
-    .error { color: red; margin-top: 10px; font-size: 14px; }
-    .hint { font-size: 12px; color: #666; display: block; margin-bottom: 5px; text-align: left; }
+    :root {
+        --mhrs-success: #28a745;
+        --mhrs-teal: #20c997;
+        --mhrs-danger: #dc3545;
+        --mhrs-primary: #0d6efd;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
+
+    .login-container {
+        width: 100%;
+        max-width: 450px;
+    }
+
+    .login-card {
+        background: white;
+        border-radius: 25px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        overflow: hidden;
+        animation: slideUp 0.6s ease-out;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .login-header {
+        background: linear-gradient(135deg, var(--mhrs-success) 0%, var(--mhrs-teal) 100%);
+        padding: 40px 30px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .login-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 300px;
+        height: 300px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+    }
+
+    .patient-icon {
+        width: 90px;
+        height: 90px;
+        background: white;
+        border-radius: 50%;
+        margin: 0 auto 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+        color: var(--mhrs-success);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        position: relative;
+        z-index: 1;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
+    }
+
+    .login-title {
+        color: white;
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .login-subtitle {
+        color: rgba(255,255,255,0.9);
+        font-size: 14px;
+        font-weight: 500;
+        position: relative;
+        z-index: 1;
+    }
+
+    .login-body {
+        padding: 40px 35px;
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 8px;
+        color: #2c3e50;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .input-wrapper {
+        position: relative;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 18px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        font-size: 18px;
+        transition: all 0.3s;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 15px 20px 15px 50px;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        font-size: 15px;
+        transition: all 0.3s;
+        background: #f8f9fa;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--mhrs-success);
+        background: white;
+        box-shadow: 0 0 0 4px rgba(40,167,69,0.1);
+    }
+
+    .form-control:focus + .input-icon {
+        color: var(--mhrs-success);
+    }
+
+    .password-toggle {
+        position: absolute;
+        right: 18px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        font-size: 18px;
+        padding: 5px;
+        transition: all 0.3s;
+    }
+
+    .password-toggle:hover {
+        color: var(--mhrs-success);
+    }
+
+    .hint-box {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border-left: 4px solid var(--mhrs-primary);
+        padding: 15px 18px;
+        border-radius: 10px;
+        margin-top: 12px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .hint-icon {
+        color: var(--mhrs-primary);
+        font-size: 20px;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .hint-text {
+        font-size: 13px;
+        color: #2c3e50;
+        line-height: 1.6;
+        font-weight: 500;
+    }
+
+    .btn-login {
+        width: 100%;
+        padding: 16px;
+        background: linear-gradient(135deg, var(--mhrs-success) 0%, var(--mhrs-teal) 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(40,167,69,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 25px;
+    }
+
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(40,167,69,0.4);
+    }
+
+    .btn-login:active {
+        transform: translateY(0);
+    }
+
+    .btn-login:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .error-message {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5b7bd 100%);
+        color: var(--mhrs-danger);
+        padding: 15px 20px;
+        border-radius: 12px;
+        margin-top: 20px;
+        font-size: 14px;
+        font-weight: 600;
+        display: none;
+        align-items: center;
+        gap: 12px;
+        border-left: 4px solid var(--mhrs-danger);
+        animation: shake 0.5s;
+    }
+
+    .error-message.show {
+        display: flex;
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-10px); }
+        75% { transform: translateX(10px); }
+    }
+
+    .error-icon {
+        font-size: 20px;
+    }
+
+    .back-link {
+        text-align: center;
+        margin-top: 25px;
+        padding-top: 25px;
+        border-top: 2px solid #e9ecef;
+    }
+
+    .back-link a {
+        color: var(--mhrs-success);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+    }
+
+    .back-link a:hover {
+        color: var(--mhrs-teal);
+        gap: 12px;
+    }
+
+    /* Loading Spinner */
+    .spinner {
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255,255,255,0.3);
+        border-top: 3px solid white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        display: none;
+    }
+
+    .btn-login.loading .spinner {
+        display: block;
+    }
+
+    .btn-login.loading .btn-text {
+        display: none;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+        .login-body {
+            padding: 30px 25px;
+        }
+
+        .login-header {
+            padding: 35px 25px;
+        }
+
+        .patient-icon {
+            width: 80px;
+            height: 80px;
+            font-size: 36px;
+        }
+
+        .login-title {
+            font-size: 24px;
+        }
+    }
   </style>
 </head>
 <body>
-<div class="login-box">
-  <h2>Hasta Girişi</h2>
-  <form id="patForm">
-    <input type="text" id="tcNo" placeholder="TC Kimlik Numaranız" required maxlength="11">
 
-    <input type="password" id="password" placeholder="Şifreniz" required>
-    <span class="hint">ℹ️ Şifreniz: Telefon numaranızın son 4 hanesi + TC'nizin ilk 4 hanesidir.</span>
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="patient-icon">
+        <i class="fas fa-user-injured"></i>
+      </div>
+      <h2 class="login-title">Hasta Girişi</h2>
+      <p class="login-subtitle">MHRS Hekim Randevu Sistemi</p>
+    </div>
 
-    <button type="submit">Giriş Yap</button>
-  </form>
-  <div id="msg" class="error"></div>
+    <div class="login-body">
+      <form id="patForm">
+        <div class="form-group">
+          <label class="form-label" for="tcNo">
+            <i class="fas fa-id-card me-1"></i> TC Kimlik Numarası
+          </label>
+          <div class="input-wrapper">
+            <input type="text"
+                   id="tcNo"
+                   class="form-control"
+                   placeholder="TC Kimlik numaranızı girin"
+                   required
+                   maxlength="11"
+                   pattern="[0-9]{11}"
+                   autocomplete="username">
+            <i class="fas fa-id-card input-icon"></i>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">
+            <i class="fas fa-lock me-1"></i> Şifre
+          </label>
+          <div class="input-wrapper">
+            <input type="password"
+                   id="password"
+                   class="form-control"
+                   placeholder="Şifrenizi girin"
+                   required
+                   autocomplete="current-password">
+            <i class="fas fa-lock input-icon"></i>
+            <button type="button" class="password-toggle" onclick="togglePassword()">
+              <i class="fas fa-eye" id="toggleIcon"></i>
+            </button>
+          </div>
+
+          <div class="hint-box">
+            <i class="fas fa-info-circle hint-icon"></i>
+            <div class="hint-text">
+              <strong>Şifre Formatı:</strong> Telefon numaranızın son 4 hanesi + TC kimlik numaranızın ilk 4 hanesidir.
+              <br>
+              <small>Örnek: Telefon son 4 hane (5678) + TC ilk 4 hane (1234) = 56781234</small>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-login" id="loginBtn">
+          <div class="spinner"></div>
+          <span class="btn-text">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Giriş Yap
+                    </span>
+        </button>
+      </form>
+
+      <div id="msg" class="error-message">
+        <i class="fas fa-exclamation-circle error-icon"></i>
+        <span id="errorText">Giriş başarısız!</span>
+      </div>
+
+      <div class="back-link">
+        <a href="/">
+          <i class="fas fa-arrow-left"></i>
+          Giriş Seçimine Dön
+        </a>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
+  function togglePassword() {
+      const passwordInput = document.getElementById('password');
+      const toggleIcon = document.getElementById('toggleIcon');
+
+      if (passwordInput.type === 'password') {
+          passwordInput.type = 'text';
+          toggleIcon.classList.remove('fa-eye');
+          toggleIcon.classList.add('fa-eye-slash');
+      } else {
+          passwordInput.type = 'password';
+          toggleIcon.classList.remove('fa-eye-slash');
+          toggleIcon.classList.add('fa-eye');
+      }
+  }
+
+  // TC No validation
+  document.getElementById('tcNo').addEventListener('input', function(e) {
+      this.value = this.value.replace(/[^0-9]/g, '');
+  });
+
   document.getElementById('patForm').addEventListener('submit', function(e) {
-    e.preventDefault();
+      e.preventDefault();
 
-    const tcNo = document.getElementById('tcNo').value;
-    const password = document.getElementById('password').value; // Şifreyi alıyoruz
+      const tcNo = document.getElementById('tcNo').value;
+      const password = document.getElementById('password').value;
+      const loginBtn = document.getElementById('loginBtn');
+      const errorMsg = document.getElementById('msg');
+      const errorText = document.getElementById('errorText');
 
-    // Sunucuya hem TC hem Şifre gönderiyoruz
-    fetch('/patients/api/login', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        tcNo: tcNo,
-        password: password
+      // TC validation
+      if (tcNo.length !== 11) {
+          errorText.textContent = 'TC Kimlik numarası 11 haneli olmalıdır!';
+          errorMsg.classList.add('show');
+          return;
+      }
+
+      // Hide previous error
+      errorMsg.classList.remove('show');
+
+      // Show loading state
+      loginBtn.classList.add('loading');
+      loginBtn.disabled = true;
+
+      fetch('/patients/api/login', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+              tcNo: tcNo,
+              password: password
+          })
       })
-    })
-            .then(async res => {
-              // Eğer giriş başarılıysa (HTTP 200)
-              if (res.ok) {
-                return res.json().then(data => {
-                  window.location.href = '/dashboard';
-                });
-              }
-              // Eğer hata varsa (HTTP 401 vs), backend'den gelen mesajı al (Text olarak)
-              else {
-                const errorMsg = await res.text();
-                document.getElementById('msg').innerText = errorMsg || "Giriş başarısız!";
-              }
-            })
-            .catch(err => {
-              console.error(err);
-              document.getElementById('msg').innerText = "Bağlantı hatası oluştu.";
-            });
+      .then(async res => {
+          if (res.ok) {
+              return res.json().then(data => {
+                  // Success animation
+                  loginBtn.innerHTML = '<i class="fas fa-check-circle"></i> Başarılı! Yönlendiriliyor...';
+                  loginBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+
+                  setTimeout(() => {
+                      window.location.href = '/dashboard';
+                  }, 800);
+              });
+          } else {
+              const errorMsg = await res.text();
+              throw new Error(errorMsg || "Giriş başarısız!");
+          }
+      })
+      .catch(err => {
+          loginBtn.classList.remove('loading');
+          loginBtn.disabled = false;
+
+          errorText.textContent = err.message || 'TC Kimlik numarası veya şifre hatalı!';
+          errorMsg.classList.add('show');
+
+          // Shake animation
+          document.querySelector('.login-card').style.animation = 'shake 0.5s';
+          setTimeout(() => {
+              document.querySelector('.login-card').style.animation = '';
+          }, 500);
+      });
+  });
+
+  // Clear error on input
+  document.getElementById('tcNo').addEventListener('input', function() {
+      document.getElementById('msg').classList.remove('show');
+  });
+
+  document.getElementById('password').addEventListener('input', function() {
+      document.getElementById('msg').classList.remove('show');
   });
 </script>
+
 </body>
 </html>
