@@ -18,3 +18,17 @@ FROM appointments a
 WHERE a.patient_id = p_patient_id
 ORDER BY a.appointment_date;
 END //
+
+DROP PROCEDURE IF EXISTS GetDoctorDashboardStats //
+
+CREATE PROCEDURE GetDoctorDashboardStats(IN p_doctor_id BIGINT)
+BEGIN
+SELECT
+    -- DATE() fonksiyonu ile saat kısmını atıp sadece günü karşılaştırıyoruz
+    COUNT(CASE WHEN status = 'SCHEDULED' AND DATE(appointment_date) = CURDATE() THEN 1 END) as today_count,
+    COUNT(CASE WHEN status = 'SCHEDULED' AND DATE(appointment_date) = DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 1 END) as tomorrow_count,
+    COUNT(CASE WHEN status = 'SCHEDULED' THEN 1 END) as total_pending,
+    COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) as completed_count
+FROM appointments
+WHERE doctor_id = p_doctor_id;
+END //

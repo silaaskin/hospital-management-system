@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.query.Procedure;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -74,10 +75,16 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     // --- PROCEDURE YETENEKLERİ ---
 
     // Bir hastanın bekleyen randevu sayısını döndüren Procedure
+    @Transactional // Buraya ekleyin
     @Procedure(procedureName = "GetPatientUpcomingAppointmentCount")
     Integer getPatientUpcomingAppointmentCount(@Param("p_tc") String tcNo);
 
     // Bir hastanın tüm randevu detaylarını listeleyen Procedure
+    @Transactional
     @Procedure(procedureName = "GetPatientAppointments")
     List<Object[]> getPatientAppointments(@Param("p_patient_id") Long patientId);
+
+    @Transactional
+    @Procedure(procedureName = "GetDoctorDashboardStats")
+    List<Object[]> getDoctorDashboardStats(@Param("p_doctor_id") Long doctorId);
 }

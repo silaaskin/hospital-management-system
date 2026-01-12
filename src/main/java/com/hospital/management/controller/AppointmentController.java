@@ -3,8 +3,10 @@ package com.hospital.management.controller;
 import com.hospital.management.model.Appointment;
 import com.hospital.management.model.Appointment.AppointmentStatus;
 import com.hospital.management.model.Prescription;
+import com.hospital.management.model.Patient;
 import com.hospital.management.service.AppointmentService;
 import com.hospital.management.service.PrescriptionService;
+import com.hospital.management.service.PatientService;
 import com.hospital.management.repository.AppointmentRepository;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
+
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -28,6 +32,7 @@ public class AppointmentController {
     @Autowired private AppointmentService appointmentService;
     @Autowired private AppointmentRepository appointmentRepository;
     @Autowired private PrescriptionService prescriptionService;
+    @Autowired private PatientService patientService;
 
     @GetMapping("/view")
     public String showUserAppointments(Model model, HttpSession session) {
@@ -40,6 +45,14 @@ public class AppointmentController {
         if ("PATIENT".equals(userType)) {
             allUserApps = appointmentService.getAppointmentsByPatient(userId);
             model.addAttribute("pageTitle", "Randevularım");
+
+            // PROCEDURE ENTEGRASYONU
+            // patientService artık yukarıda tanımlandığı için hata vermeyecektir.
+            patientService.getPatientById(userId).ifPresent(patient -> {
+                Integer upcomingCount = appointmentService.getUpcomingCountByTc(patient.getTcNo());
+                model.addAttribute("upcomingCount", upcomingCount);
+            });
+
         } else if ("DOCTOR".equals(userType)) {
             allUserApps = appointmentService.getAppointmentsByDoctor(userId);
             model.addAttribute("pageTitle", "Randevu Listem");
@@ -180,5 +193,42 @@ public class AppointmentController {
                 .filter(a -> a.getStatus() == AppointmentStatus.COMPLETED).collect(Collectors.toList()));
 
         model.addAttribute("appointments", validApps);
+    }
+    // AppointmentController.java içindeki metot
+    // src/main/java/com/hospital/management/controller/AppointmentController.java
+
+    @GetMapping("/api/doctor-stats")
+    @ResponseBody
+    @Transactional // Bu metodun bir transaction içinde çalışmasını sağlar
+    public ResponseEntity<?> getDoctorStats(HttpSession session) {
+        Long doctorId = (Long) session.getAttribute("userId");
+        if (doctorId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Yetkisiz erişim");
+
+        try {
+            // Procedure çağrısı
+            List<Object[]> result = appointmentRepository.getDoctorDashboardStats(doctorId);
+
+            Map<String, Object> response = new HashMap<>();
+
+            if (result != null && !result.isEmpty() && result.get(0) != null) {
+                Object[] stats = result.get(0);
+                // stats[0]: today, stats[1]: tomorrow, stats[2]: pending
+                response.put("todayCount", stats[0] != null ? stats[0].toString() : "0");
+                response.put("tomorrowCount", stats[1] != null ? stats[1].toString() : "0");
+                response.put("pendingCount", stats[2] != null ? stats[2].toString() : "0");
+            } else {
+                response.put("todayCount", "0");
+                response.put("tomorrowCount", "0");
+                response.put("pendingCount", "0");
+            }
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            // Hatayı konsola yazdırarak detayını görebiliriz
+            System.err.println("Dashboard Stats Hatası: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("İstatistikler alınamadı.");
+        }
     }
 }

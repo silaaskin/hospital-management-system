@@ -148,6 +148,7 @@ public class AppointmentService {
         return appointmentRepository.save(appointment);
     }
 
+
     public Appointment cancelAppointment(Long id) {
         Appointment app = appointmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Randevu bulunamadı!"));
@@ -168,5 +169,8 @@ public class AppointmentService {
 
     public void deleteAppointment(Long id) {
         appointmentRepository.deleteById(id);
+    }
+    public Integer getUpcomingCountByTc(String tcNo) {
+        return appointmentRepository.getPatientUpcomingAppointmentCount(tcNo);
     }
 }
